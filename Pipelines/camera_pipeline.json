@@ -1,0 +1,17 @@
+{
+    "input":{"type":"ROS"
+    },
+    "model":{"type":"CAMERA",
+        "arucodata": "./static/ArucoWand.json",
+        "arucomodel":"./static/ArucoModel_0875_yak_25-05-2019_16:23:12.pickle",
+        "arucodetection":"depthforone",
+        "cameras":[],
+        "mode":{
+            "type":"REGULAR",
+            "observations":300,
+            "Rcutoff":0.4,
+            "Tcutoff":0.3
+        },
+        "record":true
+    }
+}

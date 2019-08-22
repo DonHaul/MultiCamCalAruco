@@ -1,0 +1,17 @@
+{
+    "input":{"type":"SYNTH"
+    },
+    "model":{
+        "type":"SYNTH_CAMERA2",
+        "pixelnoisestd":0.1,
+        "K":[460.0,0.0,240.0,0.0,460.0,180.0,0.0,0.0,1.0],
+        "n_detectedarucos":5,
+        "noiset":0.5,
+        "samples":20,
+        "arucomodel":"./static/arucoModelNEW.pickle",
+        "modelscene":"./static/fakecangalhos/LookingCenterNoisy.pickle"
+
+    }
+        
+    }
+

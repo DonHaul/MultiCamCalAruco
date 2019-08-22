@@ -1,0 +1,13 @@
+{
+    "input":{"type":"ROS",
+        "rgbtopic":"/rgb/image_rect_color"
+    },
+    "model":{"type":"CANGALHO",
+        "arucodata": "./static/ArucoWand.json",
+        "arucodetection":"singular",
+        "cameras":[],
+        "mode":{
+            "type":"REGULAR"
+        }
+    }
+}

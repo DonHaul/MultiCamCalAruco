@@ -1,0 +1,20 @@
+{
+    "input":{"type":"ROS",
+        "camera":"realsense_zr300",
+        "rgbtopic":"/rgb/image_rect_color",
+        "depthtopic":"/depth_registered/sw_registered/image_rect_raw"
+    },
+    "model":{"type":"CAMERA",
+        "arucodata": "./static/ArucoWand.json",
+        "arucomodel":"./static/ArucoModel_0875_yak_25-05-2019_16:23:12.pickle",
+        "arucodetection":"allforone",
+        "cameras":[],
+        "mode":{
+            "type":"REGULAR",
+            "observations":300,
+            "Rcutoff":0.4,
+            "Tcutoff":0.3
+        },
+        "record":true
+    }
+}

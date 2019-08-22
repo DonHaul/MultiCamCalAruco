@@ -1,0 +1,15 @@
+{
+    "input":{"type":"SYNTH"
+    },
+    "model":{
+        "type":"SYNTH_CAMERA",
+        "noise":1.0,
+        "noiset":0.1,
+        "samples":500,
+        "model":"./static/fakecangalhos/Fake_4_crab_25-06-2019_18:44:35.pickle",
+        "modelscene":"./static/fakecangalhos/TestScene_51_penguin_25-06-2019_18:45:32.pickle"
+
+    }
+        
+    }
+

@@ -1,0 +1,6 @@
+{
+    "_comment":["size in meters of the size of the aruco","ids existing in the current aruco"],
+    "size":0.0747,
+    "ids":[1,2,3,4,5,6]
+    
+  }

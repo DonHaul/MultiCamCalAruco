@@ -1,0 +1,2 @@
+class ObservationsMaker():
+    pass
