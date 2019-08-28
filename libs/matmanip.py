@@ -193,7 +193,7 @@ def Rt2Homo(R=None,t=None):
 
     Args:
         R [3x3]- rotation
-        t [3x1]- tranlations
+        t [3]- tranlations
     Returns;
         H [4x4] - homography matrix
     '''

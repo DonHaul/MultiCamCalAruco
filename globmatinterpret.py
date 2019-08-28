@@ -7,31 +7,65 @@ import numpy as np
 import scipy.io
 from libs import *
 
-mat = scipy.io.loadmat('.\GlobalProcrustesICP\globalIcpOut.mat')
+import matlab.engine
+import numpy as np
+import scipy.io
+
+def CalculateGlobICP():
+        eng = matlab.engine.start_matlab()
 
 
-print(mat['R'].shape)
+        #create a list of numpy arrays
+        #50
 
-#first dimension is number of cameras, second is number of steps
-Hs = [[] for i in range(mat['R'].shape[0])]
+        eng.globalProcrustesWrapper(modelpcs,5, nargout=0)   #sending input to the function
+        eng.cd("./GlobalProcrustesICP")
 
-for i in range(mat['R'].shape[0]):
+        return RetrieveGlobICPOutput()
 
-    #cuz last step returns no rotation
-    for k in range(mat['R'].shape[1]-1):
+def RetrieveGlobICPOutput(outputpath='./GlobalProcrustesICP/globalIcpOut.mat'):
 
-        Hs[i].append = matmanip.Rt2Homo(mat['R'][i,k],mat['t'][i,k])
-
-
-actualHs = [np.eye(4) for i in range(mat['R'].shape[0])]
-
-for i in range(mat['R'].shape[0]):
-
-    for k in range(mat['R'].shape[1]-1):
-
-        actualHs[i] = np.dot(Hs[k] , actualHs[i])
+        mat = scipy.io.loadmat(outputpath)
 
 
+        print(mat['R'].shape)
 
-#for i in range()
-# Rt2Homo(R=None,t=None)
+        #first dimension is number of cameras, second is number of steps
+        Hs = [[] for i in range(mat['R'].shape[0])]
+
+        for i in range(mat['R'].shape[0]):
+
+        #cuz last step returns no rotation
+        for k in range(mat['R'].shape[1]-1):
+        
+                Hs[i].append(matmanip.Rt2Homo(mat['R'][i,k],np.squeeze(mat['t'][i,k])))
+                
+
+        actualHs = [np.eye(4) for i in range(mat['R'].shape[0])]
+
+        print(len(actualHs),actualHs[0].shape)
+
+        for i in range(mat['R'].shape[0]):
+
+        for k in range(mat['R'].shape[1]-1):
+
+
+
+                actualHs[i] = np.dot(Hs[i][k] , actualHs[i])
+
+
+        print(actualHs[0].shape)
+
+        registeredModel = []
+
+        #registeredmodel[0][x][0] cointains the array of points of pointcloud x
+        for i in range(len(actualHs)):
+                registeredModel.append(print(mat['registeredModel'][0][i][0]))
+
+
+
+        #for i in range()
+        # Rt2Homo(R=None,t=None)
+
+
+        return actualHs,registeredModel
