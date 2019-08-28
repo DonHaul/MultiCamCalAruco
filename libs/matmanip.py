@@ -8,10 +8,15 @@ This module is used to
     Make rigid transformations
     and generate them
 """
+import sys
+sys.path.append(".")
 
 import math
 import numpy as np
 import cv2
+
+def test():
+    print("this is a test")
 
 def CompareMatLists(matListA,matListB):
     '''

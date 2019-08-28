@@ -1,0 +1,9 @@
+function [outputArg1,outputArg2] = globalProcrustesWrapper(pcs,steps)
+%GLOBALPROCRUSTESWRAPPER Summary of this function goes here
+%   Detailed explanation goes here
+
+[R, t, s, Centroid, corr, registeredModel] = globalProcrustes(Model, nMaxSteps)
+outputArg1 = pcs
+outputArg2 = steps
+end
+

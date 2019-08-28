@@ -276,7 +276,7 @@ def getJsonFromFile(filename):
         return data
 
     except IOError:
-      print "Error: File does not appear to exist."
+      print ("Error: File does not appear to exist.")
       return None
 
 def LoadScene(filename):
