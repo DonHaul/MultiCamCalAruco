@@ -11,6 +11,65 @@ import libs.helperfuncs as helperfuncs
 import visu
 
 
+def ArucoRealObsGenner(ids,rots,tvecs,arucoData=None,captureT=True,captureR=True):
+    #TURN THIS INTO A FUNCTION IN THE FUTURE NOW
+
+    observsR=[]
+    observsT=[]
+    #make observations
+    #generates samples
+    for i in range(0,len(ids)):                
+        for j in range(i+1,len(ids)):
+            
+            if arucoData is not None:             
+                
+                #only valid markers
+                if ids[i] not in arucoData['ids']:
+                    print("Invalid marker id: "+str(ids[i]))
+
+                    continue 
+
+                                #only valid markers
+                if ids[j] not in arucoData['ids']:
+                    print("Invalid marker id: "+str(ids[j]))
+
+                    continue 
+
+            #print("observing "+str(i)+" and "+str(j))
+
+    
+            #generate R observations
+            if(captureR):
+                
+                #for real data
+                if arucoData is not None:
+                    obsR={"to":arucoData['idmap'][str(ids[i])],"from":arucoData['idmap'][str(ids[j])],"R":np.dot(rots[i].T,rots[j])}
+                else:
+                    #synth data
+                    obsR={"to":ids[i],"from":ids[j],"R":np.dot(rots[i].T,rots[j])}
+                    
+                observsR.append(obsR) 
+            
+            
+            
+            if(captureT):
+                
+                
+                
+                #generate t observations
+                if arucoData is not None:
+                    obsT={"from":arucoData['idmap'][str(ids[i])],"to":arucoData['idmap'][str(ids[j])],"t":np.squeeze(np.dot(rots[j].T,(tvecs[i]-tvecs[j]).T))} 
+                else:
+                    #synth data
+                    obsT={"to":ids[j],"from":ids[i],"t":np.squeeze(np.dot(rots[j].T,(tvecs[i]-tvecs[j]).T))}
+
+
+                observsT.append(obsT)
+
+        return observsR,observsT
+
+
+
 def ObsViewer(obs,key="R",fro="from",to="to",pause=True,show=False):
     '''
     Used to view observations

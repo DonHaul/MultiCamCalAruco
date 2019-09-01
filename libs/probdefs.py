@@ -67,12 +67,12 @@ def rotationProbDef(observations,N):
         #   print("skippity: weird index found")
         #   continue
         
-        print(cnt)
+        #print(cnt)
 
         
 
-        print(Ident.shape)
-        print(obs['to'])
+        #print(Ident.shape)
+        #print(obs['to'])
         #fills the matrices according to the observed pairs
         Ident[cnt*3:cnt*3+3,obs['to']*3:obs['to']*3+3]= np.eye(3)
         A[cnt*3:cnt*3+3,obs['from']*3:obs['from']*3+3]= obs['R']

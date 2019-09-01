@@ -65,6 +65,17 @@ def draw_geometry(pcd,saveImg = False,saveName=None):
     return vis
 
 def paintImage(img,point2paint,offset = 5,color = [255,0,255]):
+    
+    #print(img.shape)
+
+    #print(point2paint)
+    
+    #print(0 < point2paint[0] < img.shape[0])
+    #print(0 < point2paint[1] < img.shape[1])
+
+    if( not (0 < point2paint[0] < img.shape[0]) or not(0 < point2paint[1] < img.shape[1])):
+        return img
+    
     #print("Painting shape")
     
     #print(img.shape)

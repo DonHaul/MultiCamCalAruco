@@ -16,7 +16,7 @@ import copy
 
 #pipeline classes
 from Classes.ImgReaders import RosStreamReader,ImgStreamReader,StreamReader,RosGatherStreamReader
-from Classes.ObservationGenners import CamerasObservationMaker,CangalhoObservationsMaker, CangalhoSynthObsMaker, CameraSynthObsMaker, CameraSynthObsMaker2
+from Classes.ObservationGenners import CamerasObservationMaker,CangalhoObservationsMaker, CangalhoSynthObsMaker, CameraSynthObsMaker, CameraSynthObsMaker2, CangalhoSynthObsMaker2
 from Classes.ArucoDetecc import CangalhoPnPDetector,CangalhoProcrustesDetector,SingleArucosDetector
 from Classes.PosesCalculators import PosesCalculator, OutlierRemPoseCalculator , PosesCalculatorSynth
 from Classes import PosePipeline
@@ -97,7 +97,6 @@ def main(argv):
 
 
 
-
     #hash of aruco detector classes
     arucodetectors={
         'singular':SingleArucosDetector.SingleArucosDetector,
@@ -159,6 +158,8 @@ def main(argv):
         state['intrinsics'] = FileIO.getIntrinsics(posepipeline.imgStream.camNames)
         state['arucodata'] = FileIO.getJsonFromFile(data['model']['arucodata'])
         state['arucomodel'] = FileIO.getFromPickle(data['model']['arucomodel'])
+
+        
 
 
     elif data['input']['type']=='SYNTH':
@@ -273,6 +274,7 @@ def main(argv):
         obsdata['synthmodel']=state['synthmodel']
         obsdata['modelscene']=state['modelscene']
 
+        print("JEFF")
         visu.ViewRefs(obsdata['modelscene'][0],obsdata['modelscene'][1])
 
         posepipeline.ObservationMaker= CameraSynthObsMaker.CameraSynthObsMaker(obsdata)
@@ -292,6 +294,26 @@ def main(argv):
         #visu.ViewRefs(obsdata['modelscene']['R'],obsdata['modelscene']['t'])
 
         posepipeline.ObservationMaker= CameraSynthObsMaker2.CameraSynthObsMaker2(obsdata)
+        
+    elif data['model']['type']=='SYNTH_CANGALHO2':
+        
+        state['arucodata'] = FileIO.getJsonFromFile(data['model']['arucodata'])
+
+        state['arucodata']['idmap'] = aruco.markerIdMapper(state['arucodata']['ids'])
+
+
+        #in order to not copy by reference https://stackoverflow.com/questions/3975376/understanding-dict-copy-shallow-or-deep
+        obsdata=copy.deepcopy(data['model'])
+        obsdata['synthmodel']=state['synthmodel']
+        obsdata['arucodata']=state['arucodata']
+ 
+        print("DAATAAAA")
+        print(data['model'])
+
+    
+        #visu.ViewRefs(obsdata['modelscene']['R'],obsdata['modelscene']['t'])
+
+        posepipeline.ObservationMaker= CangalhoSynthObsMaker2.CangalhoSynthObsMaker2(obsdata)
         
     else:
         print("This Pipeline Model is invalid")
@@ -337,7 +359,7 @@ def main(argv):
         
 
         #compute the corners of the cangalho
-        if data['model']['type']=='CANGALHO':
+        if data['model']['type']=='CANGALHO' or data['model']['type']=='SYNTH_CANGALHO2':
 
             arucoModel = {"R":posepipeline.posescalculator.R,"T":posepipeline.posescalculator.t}
 

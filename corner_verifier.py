@@ -8,21 +8,19 @@ import open3d
 import numpy as np
 import time
 
-import commandline
-import StateManager
 
 
 import sys
 
 from libs import *
-
+from libs import rosinterface as IRos
 def main(argv):
     
 
     
     freq=50
 
-    camNames = IRos.getAllPluggedCameras()
+    camNames =  IRos.getAllPluggedCameras()
     camName = camNames[0]
     print(camName)
 
@@ -35,10 +33,10 @@ def main(argv):
 
     arucoData['idmap'] = aruco.markerIdMapper(arucoData['ids'])
 
-    arucoCorners = FileIO.getFromPickle("pickles/corners_scorpion_07-06-2019_15:34:54.pickle")
+    arucoCorners ={}#= FileIO.getFromPickle("pickles/corners_scorpion_07-06-2019_15:34:54.pickle")
 
     #load aruco model
-    arucoModel = FileIO.getFromPickle("arucoModels/ArucoModel_0875_yak_25-05-2019_16:23:12.pickle")
+    arucoModel = FileIO.getFromPickle("./static/arucoModelNEW.pickle")
 
     #shows aruco model
     #visu.ViewRefs(arucoModel['R'],arucoModel['T'],showRef=True,refSize=0.1)
@@ -110,8 +108,13 @@ class PCGetter(object):
 
         #finds markers
         det_corners, ids, rejected = aruco.FindMarkers(rgb, K,D)
-
+        
+        
+        print(det_corners)
+        
         dettt = np.asarray(det_corners)
+        print(dettt.shape)
+        quit()
 
         dettt = dettt.reshape(-1,2) #piles up corners x,2
         print(dettt)

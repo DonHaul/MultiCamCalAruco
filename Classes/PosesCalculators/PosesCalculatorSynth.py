@@ -10,6 +10,8 @@ class PosesCalculatorSynth(PosesCalculator.PosesCalculator):
 
 
     def AddObservations(self,obsR,obsT):
+
+        print("Poses Calculator Synth")
         
         #add observations for R
         super(PosesCalculatorSynth,self).AddObservations(obsR,obsT)

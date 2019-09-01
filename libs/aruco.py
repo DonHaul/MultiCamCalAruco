@@ -226,6 +226,11 @@ def FindPoses(K,D,det_corners,img,n,size):
         #cv2.Rodrigues(src=rvecs[i,0,:])
         rots.append(elm)
 
+        
+        print(elm)
+        print(tvecs[i])
+        print(np.atleast_2d(D).shape)
+
         #draws axis
         img = cv2.aruco.drawAxis(img,K,D,elm,tvecs[i],0.1)
 
