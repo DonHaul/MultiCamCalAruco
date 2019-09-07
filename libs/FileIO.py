@@ -162,6 +162,8 @@ def putFileWithJson(data,filename=None,folder=None,animal=False,putDate=False):
 
     if folder is None:
         folder = "./tmp"
+
+        CreateFolder("./tmp",False)
     
     if filename is None:
         filename = ""
@@ -178,7 +180,7 @@ def putFileWithJson(data,filename=None,folder=None,animal=False,putDate=False):
     f = open(saveName+".json","w")
 
     #save files
-    json.dump(data,f)
+    json.dump(data,f,indent=4, separators=(',', ': '))
     
     f.close()
 
@@ -276,7 +278,7 @@ def getJsonFromFile(filename):
         return data
 
     except IOError:
-      print ("Error: File does not appear to exist.")
+      print ("Error:"+filename+"  does not appear to exist.")
       return None
 
 def LoadScene(filename):

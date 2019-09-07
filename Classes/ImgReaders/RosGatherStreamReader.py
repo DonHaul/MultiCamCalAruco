@@ -110,10 +110,7 @@ class RosGatherStreamReader(StreamReader.StreamReader):
         #if all camera have sent something
         if(np.sum(self.gatherReady)== self.N_cams):
 
-            print("GATHERED")
 
-            print(self.data[imgtype][0].shape)
-            print(self.data[imgtype][1].shape)
 
             self.nextIsAvailable=True
 

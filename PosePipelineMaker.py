@@ -30,11 +30,11 @@ def worker(posepipe):
     while True:
         #while there are new images
 
+        
         #print("AVAILABILITY")
         #print(posepipe.imgStream.nextIsAvailable)
         if posepipe.imgStream.nextIsAvailable:
-            
-            
+  
 
             #set input as consumed
             posepipe.imgStream.nextIsAvailable=False
@@ -42,8 +42,9 @@ def worker(posepipe):
             #gets next image
             streamData= posepipe.imgStream.next()
 
-            #if streamData is not None:
-            #    posepipe.imgShower(streamData)               
+            #shows said image
+            if streamData is not None:
+                posepipe.imgShower(streamData)               
 
             #stop if there are no more images
             #if streamData is None:
@@ -80,13 +81,13 @@ def worker(posepipe):
 
 
 
-def main(argv):
+def main(path,view=True):
    
-    if len(argv)==0:
-       raise Exception('Please specify a Pipeline File')
+
+
 
     #Reads the configuration file
-    data =  FileIO.getJsonFromFile(argv[0])
+    data =  FileIO.getJsonFromFile(path)
     
 
     posepipeline = PosePipeline.PosePipeline()
@@ -95,6 +96,7 @@ def main(argv):
     state={}
 
 
+    
 
 
     #hash of aruco detector classes
@@ -159,6 +161,7 @@ def main(argv):
         state['arucodata'] = FileIO.getJsonFromFile(data['model']['arucodata'])
         state['arucomodel'] = FileIO.getFromPickle(data['model']['arucomodel'])
 
+
         
 
 
@@ -219,6 +222,9 @@ def main(argv):
 
     elif data['model']['type']=='CAMERA':
 
+        state['arucomodel'] = FileIO.getFromPickle(data['model']['arucomodel'])
+       
+
         #static parameters
         multicamData={
             "intrinsics":state['intrinsics'],
@@ -274,8 +280,8 @@ def main(argv):
         obsdata['synthmodel']=state['synthmodel']
         obsdata['modelscene']=state['modelscene']
 
-        print("JEFF")
-        visu.ViewRefs(obsdata['modelscene'][0],obsdata['modelscene'][1])
+        if(view==True):
+            visu.ViewRefs(obsdata['modelscene'][0],obsdata['modelscene'][1])
 
         posepipeline.ObservationMaker= CameraSynthObsMaker.CameraSynthObsMaker(obsdata)
   
@@ -336,12 +342,12 @@ def main(argv):
         except KeyboardInterrupt:
             print("shut")
 
-    print("Exited Stuff")
+    print("Stop Threads")
     posepipeline.Stop()
     
     t1.join() 
     
-    print("FINISHED ELEGANTLY")
+    print("Finished :)")
 
     #Only create log if full process was done
     if posepipeline.posescalculator.t is not None:
@@ -365,15 +371,18 @@ def main(argv):
 
             corners = aruco.ComputeCorners(state['arucodata'],arucoModel)
 
-            visu.SeePositions(corners)
+            if(view==True):
+                visu.SeePositions(corners)
 
             datatosave['corners']=corners
         
 
-        #see and save resulting scene
-        print(posepipeline.posescalculator.R)
-        print(posepipeline.posescalculator.t)
-        visu.ViewRefs(posepipeline.posescalculator.R,posepipeline.posescalculator.t,refSize=0.1,showRef=True,saveImg=True,saveName=posepipeline.folder+"/screenshot.jpg")
+        if(view==True):
+            #see and save resulting scene
+            print(posepipeline.posescalculator.R)
+            print(posepipeline.posescalculator.t)
+            
+            visu.ViewRefs(posepipeline.posescalculator.R,posepipeline.posescalculator.t,refSize=0.1,showRef=True,saveImg=True,saveName=posepipeline.folder+"/screenshot.jpg")
 
         #record r and t
         if data["model"]["record"]==True:
@@ -396,8 +405,16 @@ def main(argv):
 
 
         FileIO.saveAsPickle("/poses",datatosave,posepipeline.folder,False,False)
+
+
+    return posepipeline.folder
     
  
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    path = sys.argv[1:]
+
+    if len(path)==0:
+       raise Exception('Please specify a Pipeline File')
+
+    main(path[0])

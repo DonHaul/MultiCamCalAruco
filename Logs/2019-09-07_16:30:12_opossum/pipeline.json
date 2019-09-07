@@ -1,0 +1,1 @@
+{"input": {"rgbtopic": "/rgb/image_rect_color", "camera": "realsense_zr300", "type": "ROS"}, "model": {"record": true, "cameras": [], "arucomodel": "./static/ArucoModel_0875_yak_25-05-2019_16:23:12.pickle", "mode": {"Tcutoff": 0.3, "type": "REGULAR", "observations": 300, "Rcutoff": 0.4}, "arucodetection": "allforone", "type": "CAMERA", "arucodata": "./static/ArucoWand.json"}}

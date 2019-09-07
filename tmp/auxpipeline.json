@@ -1,0 +1,25 @@
+{
+    "input": {
+        "type": "SYNTH"
+    },
+    "model": {
+        "noiset": 0.5,
+        "pixelnoisestd": 0.1,
+        "n_detectedarucos": 5,
+        "K": [
+            460.0,
+            0.0,
+            320.0,
+            0.0,
+            460.0,
+            240.0,
+            0.0,
+            0.0,
+            1.0
+        ],
+        "arucomodel": "./static/arucoModelNEW.pickle",
+        "samples": 10,
+        "type": "SYNTH_CANGALHO2",
+        "arucodata": "./static/ArucoWand.json"
+    }
+}

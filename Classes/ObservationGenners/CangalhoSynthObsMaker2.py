@@ -8,6 +8,8 @@ import cv2
 class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
     def __init__(self,data):
 
+        self.view = False
+
         
         self.arucoData= data['arucodata']
 
@@ -18,8 +20,8 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
 
         self.modelcorners = data['synthmodel']['corners']
 
-
-        visu.ViewRefs(data['synthmodel']['R'],data['synthmodel']['t'],refSize=0.05)
+        if self.view:
+            visu.ViewRefs(data['synthmodel']['R'],data['synthmodel']['t'],refSize=0.05)
 
         self.Rcam=np.eye(3)
         self.tcam=np.array([[0],[0],[-1]])
@@ -51,9 +53,10 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
 
         counter = 0
 
-        out1 = cv2.VideoWriter('outputcorners.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 3, (640,480))
+        if self.view:
+            out1 = cv2.VideoWriter('outputcorners.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 3, (640,480))
 
-        outaxis = cv2.VideoWriter('outputaxis.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 3, (640,480))
+            outaxis = cv2.VideoWriter('outputaxis.avi',cv2.VideoWriter_fourcc('M','J','P','G'), 3, (640,480))
 
 
 
@@ -63,6 +66,7 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
  
         
         allObs = []#[ [] for z in range(len(self.Rcam)) ]
+
 
         for k in range(self.frames):
 
@@ -122,17 +126,18 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
 
             for j in range(pts2DISPLAY2D.shape[-1]):   
                 img = visu.paintImage(img,[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=[0,255,0])
-                
-            cv2.imwrite("./Media/corners"+str(counter)+ ".png",img)
-            cv2.imshow("Detected Markers",img)
-            cv2.waitKey(300)
-            cv2.destroyAllWindows()
-
-
-            print("LOALOAL")
-            print(img.shape)
-            out1.write(img)
             
+            if self.view:
+                cv2.imwrite("./Media/corners"+str(counter)+ ".png",img)
+                cv2.imshow("Detected Markers",img)
+                cv2.waitKey(300)
+                cv2.destroyAllWindows()
+
+
+                print("LOALOAL")
+                print(img.shape)
+                out1.write(img)
+                
             pts2D = pts2D[0:2,:].astype(np.float)
 
 
@@ -160,13 +165,15 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
 
             rots,tvecs,img = aruco.FindPoses(self.K,np.array([0.0,0.0,0.0,0.0]),cornsformatted,img,len(rnds),self.arucoData['size'])
 
-            cv2.imwrite("./Media/cornersaxis"+str(counter)+".png",img)
-            cv2.imshow("Detected Markers",img)
-            cv2.waitKey(30)
-            cv2.destroyAllWindows()
+            if self.view:
+                cv2.imwrite("./Media/cornersaxis"+str(counter)+".png",img)
+                cv2.imshow("Detected Markers",img)
+                cv2.waitKey(30)
+                cv2.destroyAllWindows()
 
-            outaxis.write(img)
-            
+                #writing videio
+                outaxis.write(img)
+                
 
             #generate observations
             observsR, observsT = obsgen.ArucoRealObsGenner(rnds,rots,tvecs,captureT=True,captureR=True)
@@ -183,9 +190,9 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
         #print(observationsR)
 
         #print("HOLAA")
-
-        out1.release()
-        outaxis.release()
+        if self.view:
+            out1.release()
+            outaxis.release()
 
         return None,None,observationsR, observationsT
         
