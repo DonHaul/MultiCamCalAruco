@@ -23,6 +23,22 @@ def plotImg(img):
     plt.waitforbuttonpress()
     plt.close(fig)
 
+def DrawScene(points2display,Rcam,Tcam):
+
+
+    points = SeePositions(points2display.T,view=False)
+
+    mesh = open3d.read_triangle_mesh("./static/camera.ply")
+
+    H=mmnip.Rt2Homo(np.dot(Rcam, mmnip.genRotMat([90,0,90])),np.array([-0.09,0,0])+np.squeeze(Tcam))
+
+    mesh.transform(H)
+    #mesh.compute_vertex_normals()
+    mesh.compute_triangle_normals()
+
+    draw_geometry(points + [mesh])
+
+    
 
 def draw_geometry(pcd,saveImg = False,saveName=None):
     '''
@@ -64,7 +80,23 @@ def draw_geometry(pcd,saveImg = False,saveName=None):
 
     return vis
 
+
+
+
+
 def paintImage(img,point2paint,offset = 5,color = [255,0,255]):
+    
+    #print(img.shape)
+
+    #print(point2paint)
+    
+    #print(0 < point2paint[0] < img.shape[0])
+    #print(0 < point2paint[1] < img.shape[1])
+
+    if( not (0 < point2paint[0] < img.shape[0]-1) or not(0 < point2paint[1] < img.shape[1]-1)):
+        return img
+    
+
     #print("Painting shape")
     
     #print(img.shape)
@@ -148,14 +180,16 @@ def ViewRefs(R=None,t=None,refSize=10,showRef=False,view=True,zaWordu=False,save
 
 
 
-def SeePositions(positions):
+def SeePositions(positions,color=[0.8, 0.8, 0],view=True):
     
     allpositions=[]
     for i in range(positions.shape[0]):
         mesh_sphere=open3d.create_mesh_sphere(radius = 0.003)
-        mesh_sphere.paint_uniform_color([0.8, 0.8, 0])
+        mesh_sphere.paint_uniform_color(color)
         mesh_sphere.transform(mmnip.Rt2Homo(np.eye(3),np.squeeze(positions[i,:])))
         allpositions.append(mesh_sphere)
 
-    draw_geometry(allpositions)
+    if view:
+        draw_geometry(allpositions)
 
+    return allpositions

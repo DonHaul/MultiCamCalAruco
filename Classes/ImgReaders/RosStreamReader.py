@@ -18,11 +18,12 @@ import StreamReader
 class RosStreamReader(StreamReader.StreamReader):
 
     
-    def __init__(self,camNames=None,inputData=None,freq=2):
+    def __init__(self,camNames=None,inputData=None,freq=0.001):
 
         StreamReader.StreamReader.__init__(self)
 
-        self.freq = 0.1
+        print("freq",freq)
+        self.freq = freq
 
         self.camNames=camNames
 
@@ -56,14 +57,14 @@ class RosStreamReader(StreamReader.StreamReader):
         
         camSub = []
 
-        print("Subscribed Topics")
+        print("Subscribed Topics:")
         #getting subscirpters to use message fitlers on
         for name in self.camNames:
 
             camSub.append(message_filters.Subscriber(name + self.topicRGB, Image))
 
             if self.topicDepth is not None:
-                print("Depth Topic Is Being Captured")
+                print("Depth Topic Is Being Captured:")
                 camSub.append(message_filters.Subscriber(name + self.topicDepth, Image))
                 print(name + self.topicDepth)
 
@@ -79,20 +80,25 @@ class RosStreamReader(StreamReader.StreamReader):
 
     def callback(self,*args):
 
-        print("NEW MESSAGE INCOMING")
+        print("Message Received")
 
         self.count = self.count + 1
         #print(self.count)
         data={'names':self.camNames,'rgb':[],'depth':[]}
-        #print("NEXTU DES")
-        #print(self.N_cams)
+        print("NEXTU DES")
+        print(self.N_cams)
+        print(len(args))
+
+        #gets rgb images, and depth images too if they are captured
         for camId in range(0,self.N_cams):
 
-            img = IRos.rosImg2RGB(args[camId*2])
-            data['rgb'].append(img)
+            if self.topicDepth is None:
+                img = IRos.rosImg2RGB(args[camId])        
+                data['rgb'].append(img)
+            else:
+                img = IRos.rosImg2RGB(args[camId*2])        
+                data['rgb'].append(img)                         
 
-           
-            if self.topicDepth is not None:
                 depth = IRos.rosImg2Depth(args[camId*2+1])
                 data['depth'].append(depth)
     

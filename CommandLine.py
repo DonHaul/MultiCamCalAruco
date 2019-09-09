@@ -84,6 +84,7 @@ class Receiver:
     def help2(self,*args):
         print("No one is here to help you",args[0],args[1])
 
+t1=[]
 
 def Start(state,commandImporter):
     print("Starting Commandline")
@@ -94,3 +95,6 @@ def Start(state,commandImporter):
 
     t1 = threading.Thread(target=worker,args=(invoker,state.GetStop,))
     t1.start()
+
+def Stop():
+    t1.join() 

@@ -40,12 +40,17 @@ class CamerasObservationMaker(ObservationsMaker.ObservationsMaker):
         
         #iterate throguh cameras
         for camId in range(0,self.N_objects):
+            
+            #fetches rgb
             streamsingle = {
-                'rgb':streamData['rgb'][camId],
-                'depth':streamData['depth'][camId]
+                'rgb':streamData['rgb'][camId]
             }
             
-
+            #fetches depth if it exists
+            if len(streamData['depth']) >0:
+                streamsingle['depth']=streamData['depth'][camId]
+            
+            #detects arucos and generates observation
             obs,img = self.arucoDetector.ArucoDetector(streamsingle,self.intrinsics[self.camNames[camId]]['rgb']['K'],(0,0,0,0))
 
 
@@ -60,7 +65,7 @@ class CamerasObservationMaker(ObservationsMaker.ObservationsMaker):
         #[]]
 
         #Generate Pairs from all of the camera observations
-        obsR , obsT = obsgen.GenerateCameraPairObs(self.Allobs,self.arucoModel['R'],self.arucoModel['T'])
+        obsR , obsT = obsgen.GenerateCameraPairObs(self.Allobs,self.arucoModel['R'],self.arucoModel['t'])
 
         #obsT is
         #[,,]

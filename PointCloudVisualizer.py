@@ -29,13 +29,15 @@ class PCViewer():
 
         self.state.updated=False
 
-        self.freq=1
+        self.freq=0.0001
         self.R=poses['R']
         self.t=poses['t']
         self.camNames=poses['camnames']
 
         if len(self.camNames)==0:
             self.camNames = IRos.getAllPluggedCameras()
+
+        #self.camNames=["diavolo","killerqueen"]
 
         #fetch K of existing cameras on the files
         self.intrinsics = FileIO.getIntrinsics(self.camNames)

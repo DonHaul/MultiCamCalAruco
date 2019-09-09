@@ -4,6 +4,8 @@ PosePipelineMaker.py
 Generates and executes a pipeline to estimate poses
 """
 
+import cv2
+
 import numpy as np
 import time
 import rospy
@@ -16,7 +18,7 @@ import copy
 
 #pipeline classes
 from Classes.ImgReaders import RosStreamReader,ImgStreamReader,StreamReader,RosGatherStreamReader
-from Classes.ObservationGenners import CamerasObservationMaker,CangalhoObservationsMaker, CangalhoSynthObsMaker, CameraSynthObsMaker, CameraSynthObsMaker2
+from Classes.ObservationGenners import CamerasObservationMaker,CangalhoObservationsMaker, CangalhoSynthObsMaker, CameraSynthObsMaker, CameraSynthObsMaker2, CangalhoSynthObsMaker2
 from Classes.ArucoDetecc import CangalhoPnPDetector,CangalhoProcrustesDetector,SingleArucosDetector
 from Classes.PosesCalculators import PosesCalculator, OutlierRemPoseCalculator , PosesCalculatorSynth
 from Classes import PosePipeline
@@ -30,11 +32,11 @@ def worker(posepipe):
     while True:
         #while there are new images
 
+        
         #print("AVAILABILITY")
         #print(posepipe.imgStream.nextIsAvailable)
         if posepipe.imgStream.nextIsAvailable:
-            
-            
+  
 
             #set input as consumed
             posepipe.imgStream.nextIsAvailable=False
@@ -42,6 +44,7 @@ def worker(posepipe):
             #gets next image
             streamData= posepipe.imgStream.next()
 
+            #shows said image
             #if streamData is not None:
             #    posepipe.imgShower(streamData)               
 
@@ -54,6 +57,10 @@ def worker(posepipe):
             #generates observations
             img,ids,obsR,obsT = posepipe.ObservationMaker.GetObservations(streamData)
 
+
+            #print("SHOW IMG")
+            #cv2.imshow('image',img)
+            #cv2.waitKey(1)
             #print("RR")
             #print(obsR)
             #print("TT")
@@ -80,13 +87,13 @@ def worker(posepipe):
 
 
 
-def main(argv):
+def main(path,view=True):
    
-    if len(argv)==0:
-       raise Exception('Please specify a Pipeline File')
+
+
 
     #Reads the configuration file
-    data =  FileIO.getJsonFromFile(argv[0])
+    data =  FileIO.getJsonFromFile(path)
     
 
     posepipeline = PosePipeline.PosePipeline()
@@ -95,7 +102,7 @@ def main(argv):
     state={}
 
 
-
+    
 
 
     #hash of aruco detector classes
@@ -140,8 +147,7 @@ def main(argv):
 
     elif data['input']['type']=='ROS_GATHER':
         
-        print("ROS GATHER MODE")
-
+        
         camNames = []
 
         
@@ -159,6 +165,9 @@ def main(argv):
         state['intrinsics'] = FileIO.getIntrinsics(posepipeline.imgStream.camNames)
         state['arucodata'] = FileIO.getJsonFromFile(data['model']['arucodata'])
         state['arucomodel'] = FileIO.getFromPickle(data['model']['arucomodel'])
+
+
+        
 
 
     elif data['input']['type']=='SYNTH':
@@ -218,6 +227,9 @@ def main(argv):
 
     elif data['model']['type']=='CAMERA':
 
+        state['arucomodel'] = FileIO.getFromPickle(data['model']['arucomodel'])
+       
+
         #static parameters
         multicamData={
             "intrinsics":state['intrinsics'],
@@ -273,7 +285,8 @@ def main(argv):
         obsdata['synthmodel']=state['synthmodel']
         obsdata['modelscene']=state['modelscene']
 
-        visu.ViewRefs(obsdata['modelscene'][0],obsdata['modelscene'][1])
+        if(view==True):
+            visu.ViewRefs(obsdata['modelscene'][0],obsdata['modelscene'][1])
 
         posepipeline.ObservationMaker= CameraSynthObsMaker.CameraSynthObsMaker(obsdata)
   
@@ -285,13 +298,35 @@ def main(argv):
         obsdata['synthmodel']=state['synthmodel']
         obsdata['modelscene']=state['modelscene']
 
-        print("DAATAAAA")
-        print(data['model'])
+        if view:
+            print("DAATAAAA")
+            print(data['model'])
 
     
         #visu.ViewRefs(obsdata['modelscene']['R'],obsdata['modelscene']['t'])
 
         posepipeline.ObservationMaker= CameraSynthObsMaker2.CameraSynthObsMaker2(obsdata)
+        
+    elif data['model']['type']=='SYNTH_CANGALHO2':
+        
+        state['arucodata'] = FileIO.getJsonFromFile(data['model']['arucodata'])
+
+        state['arucodata']['idmap'] = aruco.markerIdMapper(state['arucodata']['ids'])
+
+
+        #in order to not copy by reference https://stackoverflow.com/questions/3975376/understanding-dict-copy-shallow-or-deep
+        obsdata=copy.deepcopy(data['model'])
+        obsdata['synthmodel']=state['synthmodel']
+        obsdata['arucodata']=state['arucodata']
+
+        if view:
+            print("DAATAAAA")
+            print(data['model'])
+
+    
+        #visu.ViewRefs(obsdata['modelscene']['R'],obsdata['modelscene']['t'])
+
+        posepipeline.ObservationMaker= CangalhoSynthObsMaker2.CangalhoSynthObsMaker2(obsdata)
         
     else:
         print("This Pipeline Model is invalid")
@@ -314,12 +349,13 @@ def main(argv):
         except KeyboardInterrupt:
             print("shut")
 
-    print("Exited Stuff")
+    print("Stop Threads")
     posepipeline.Stop()
     
+    #CommandLine.Stop()
     t1.join() 
     
-    print("FINISHED ELEGANTLY")
+    print("Finished :)")
 
     #Only create log if full process was done
     if posepipeline.posescalculator.t is not None:
@@ -330,6 +366,7 @@ def main(argv):
         #print("DATA IS")
         #print(data)
         #saves pipeline configuration on the outputfolder
+        print(posepipeline.folder)
         FileIO.putFileWithJson(data,"pipeline",posepipeline.folder+"/")
 
 
@@ -337,21 +374,24 @@ def main(argv):
         
 
         #compute the corners of the cangalho
-        if data['model']['type']=='CANGALHO':
+        if data['model']['type']=='CANGALHO' or data['model']['type']=='SYNTH_CANGALHO2':
 
             arucoModel = {"R":posepipeline.posescalculator.R,"T":posepipeline.posescalculator.t}
 
             corners = aruco.ComputeCorners(state['arucodata'],arucoModel)
 
-            visu.SeePositions(corners)
+            if(view==True):
+                visu.SeePositions(corners)
 
             datatosave['corners']=corners
         
 
-        #see and save resulting scene
-        print(posepipeline.posescalculator.R)
-        print(posepipeline.posescalculator.t)
-        visu.ViewRefs(posepipeline.posescalculator.R,posepipeline.posescalculator.t,refSize=0.1,showRef=True,saveImg=True,saveName=posepipeline.folder+"/screenshot.jpg")
+        if(view):
+            #see and save resulting scene
+            print(posepipeline.posescalculator.R)
+            print(posepipeline.posescalculator.t)
+            
+            visu.ViewRefs(posepipeline.posescalculator.R,posepipeline.posescalculator.t,refSize=0.1,showRef=True,saveImg=True,saveName=posepipeline.folder+"/screenshot.jpg")
 
         #record r and t
         if data["model"]["record"]==True:
@@ -360,9 +400,7 @@ def main(argv):
                 "T":posepipeline.posescalculator.recordedTs
             }
 
-            print(len(recordeddata['R']))
 
-            print(len(recordeddata['T']))
 
             FileIO.saveAsPickle("/recorded",recordeddata,posepipeline.folder,False,False)
         
@@ -374,8 +412,16 @@ def main(argv):
 
 
         FileIO.saveAsPickle("/poses",datatosave,posepipeline.folder,False,False)
+
+
+    return posepipeline.folder
     
  
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    path = sys.argv[1:]
+
+    if len(path)==0:
+       raise Exception('Please specify a Pipeline File')
+
+    main(path[0])

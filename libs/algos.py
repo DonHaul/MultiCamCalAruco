@@ -200,7 +200,7 @@ def PointCrustes(mtx1,mtx2):
 
 
 
-def procrustesMatlabJanky2(arg1,arg2):
+def procrustesMatlabJanky2(arg1,arg2,scaling=True):
     '''
     Used for returning R,t with better make the match between 2 set of points
     Args:
@@ -212,13 +212,19 @@ def procrustesMatlabJanky2(arg1,arg2):
     '''   
 
     #p2 = procrustesMatlab(arg1,arg2,reflection=True)
-    p3 = procrustesMatlab(arg1,arg2,reflection=False)
+    p3 = procrustesMatlab(arg1,arg2,reflection=False,scaling=scaling)
 
     #print("roatation")
     #print(p3[2]['rotation'].shape)
 
     return p3[2]['rotation'],p3[2]['translation']
 
+
+def procrustesMatlabWrapper(pa,pb):
+
+    a,b,c = procrustesMatlab(pa,pb,scaling=False,reflection=False)
+
+    return c['rotation'],c['translation']
 
 #copy of matlab procrustes function
 #https://stackoverflow.com/questions/18925181/procrustes-analysis-with-numpy

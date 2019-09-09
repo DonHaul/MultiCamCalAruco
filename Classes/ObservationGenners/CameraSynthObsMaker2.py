@@ -84,7 +84,7 @@ class CameraSynthObsMaker2(ObservationsMaker.ObservationsMaker):
                     detectedcorns[:,j*4:j*4+4] = cornersPos[:,rnds[j]*4:rnds[j]*4+4]            
 
                 #fetches them from the corners
-                print(cornersPos.shape)
+                #print(cornersPos.shape)
 
 
                 #detectedcorns=cornersPos

@@ -2,10 +2,20 @@ from libs import *
 
 class CangalhoPnPDetector:
     def __init__(self,data):
-
+        
+        print("DRUUUGS")
+        print("DRUUUGS")
+        print("DRUUUGS")
+        print("DRUUUGS")
+        print("DRUUUGS")
+        print("DRUUUGS")
 
         self.arucoData=data['arucodata']
+
         self.arucoModel=data['arucomodel']
+
+        print("MOMGAY",self.arucoModel)
+        print("HEYA GIRK")
         self.arucoData['idmap'] = aruco.markerIdMapper(self.arucoData['ids'])
 
 

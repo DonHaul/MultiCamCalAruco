@@ -18,9 +18,6 @@ class PosesCalculator(object):
         self.N_objects = data['N_objects']
 
 
-        print("NOBJECTS IS")
-        print(self.N_objects)
-
 
         #A.T A initialized
         self.ATAR = np.zeros((self.N_objects*3,self.N_objects*3))
