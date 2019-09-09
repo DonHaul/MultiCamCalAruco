@@ -22,7 +22,7 @@ class RosStreamReader(StreamReader.StreamReader):
 
         StreamReader.StreamReader.__init__(self)
 
-        self.freq = freq
+        self.freq = 0.1
 
         self.camNames=camNames
 
