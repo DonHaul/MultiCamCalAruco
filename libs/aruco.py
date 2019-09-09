@@ -12,6 +12,8 @@ import visu
 
 def ComputeCorners(arucoData,arucoModel):
 
+
+
     arucoData['idmap'] = markerIdMapper(arucoData['ids'])
 
     
@@ -227,9 +229,9 @@ def FindPoses(K,D,det_corners,img,n,size):
         rots.append(elm)
 
         
-        print(elm)
-        print(tvecs[i])
-        print(np.atleast_2d(D).shape)
+        #print(elm)
+        #print(tvecs[i])
+        #print(np.atleast_2d(D).shape)
 
         #draws axis
         img = cv2.aruco.drawAxis(img,K,D,elm,tvecs[i],0.1)
@@ -310,7 +312,7 @@ def GetCangalhoFromMarkersProcrustes(ids,det_corners,K,arucoData,arucoModel,dept
 
 
 
-def Get3DCorners(id,arucoData,arucoModel):
+def Get3DCorners(id,arucoData,arucoModel,translationKey = 't'):
     '''
     Gets 3D positions of the corners of a given marker
 
@@ -333,10 +335,10 @@ def Get3DCorners(id,arucoData,arucoModel):
     c4 = np.array([-arucoData['size']/2,-arucoData['size']/2,0])    #canto inferior esquerdo relativo ao centro do marker
 
     #get the actual 3D position on the model
-    corn1 = mmnip.Transform(c1,arucoModel['R'][mappedID],arucoModel['T'][mappedID])  #canto superior esquerdo relativo marker1 do cangalho
-    corn2 = mmnip.Transform(c2,arucoModel['R'][mappedID],arucoModel['T'][mappedID])  #canto superior direito relativo marker1 do cangalho
-    corn3 = mmnip.Transform(c3,arucoModel['R'][mappedID],arucoModel['T'][mappedID])  #canto inferior direito relativo marker1 do cangalho
-    corn4 = mmnip.Transform(c4,arucoModel['R'][mappedID],arucoModel['T'][mappedID])  #canto inferior esquerdo relativo marker1 do cangalho
+    corn1 = mmnip.Transform(c1,arucoModel['R'][mappedID],arucoModel[translationKey][mappedID])  #canto superior esquerdo relativo marker1 do cangalho
+    corn2 = mmnip.Transform(c2,arucoModel['R'][mappedID],arucoModel[translationKey][mappedID])  #canto superior direito relativo marker1 do cangalho
+    corn3 = mmnip.Transform(c3,arucoModel['R'][mappedID],arucoModel[translationKey][mappedID])  #canto inferior direito relativo marker1 do cangalho
+    corn4 = mmnip.Transform(c4,arucoModel['R'][mappedID],arucoModel[translationKey][mappedID])  #canto inferior esquerdo relativo marker1 do cangalho
 
 
     corn1= np.squeeze(corn1)

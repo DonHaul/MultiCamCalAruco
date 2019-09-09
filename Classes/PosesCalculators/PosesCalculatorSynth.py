@@ -4,7 +4,7 @@ import numpy as np
 class PosesCalculatorSynth(PosesCalculator.PosesCalculator):
     
     
-    def __init__(self,data):
+    def __init__(self,data,view=True):
 
         PosesCalculator.PosesCalculator.__init__(self,data)
 

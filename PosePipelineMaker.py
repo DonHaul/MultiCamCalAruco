@@ -4,6 +4,8 @@ PosePipelineMaker.py
 Generates and executes a pipeline to estimate poses
 """
 
+import cv2
+
 import numpy as np
 import time
 import rospy
@@ -43,8 +45,8 @@ def worker(posepipe):
             streamData= posepipe.imgStream.next()
 
             #shows said image
-            if streamData is not None:
-                posepipe.imgShower(streamData)               
+            #if streamData is not None:
+            #    posepipe.imgShower(streamData)               
 
             #stop if there are no more images
             #if streamData is None:
@@ -55,6 +57,10 @@ def worker(posepipe):
             #generates observations
             img,ids,obsR,obsT = posepipe.ObservationMaker.GetObservations(streamData)
 
+
+            #print("SHOW IMG")
+            #cv2.imshow('image',img)
+            #cv2.waitKey(1)
             #print("RR")
             #print(obsR)
             #print("TT")
@@ -141,8 +147,7 @@ def main(path,view=True):
 
     elif data['input']['type']=='ROS_GATHER':
         
-        print("ROS GATHER MODE")
-
+        
         camNames = []
 
         
@@ -293,8 +298,9 @@ def main(path,view=True):
         obsdata['synthmodel']=state['synthmodel']
         obsdata['modelscene']=state['modelscene']
 
-        print("DAATAAAA")
-        print(data['model'])
+        if view:
+            print("DAATAAAA")
+            print(data['model'])
 
     
         #visu.ViewRefs(obsdata['modelscene']['R'],obsdata['modelscene']['t'])
@@ -312,9 +318,10 @@ def main(path,view=True):
         obsdata=copy.deepcopy(data['model'])
         obsdata['synthmodel']=state['synthmodel']
         obsdata['arucodata']=state['arucodata']
- 
-        print("DAATAAAA")
-        print(data['model'])
+
+        if view:
+            print("DAATAAAA")
+            print(data['model'])
 
     
         #visu.ViewRefs(obsdata['modelscene']['R'],obsdata['modelscene']['t'])
@@ -345,6 +352,7 @@ def main(path,view=True):
     print("Stop Threads")
     posepipeline.Stop()
     
+    #CommandLine.Stop()
     t1.join() 
     
     print("Finished :)")
@@ -358,6 +366,7 @@ def main(path,view=True):
         #print("DATA IS")
         #print(data)
         #saves pipeline configuration on the outputfolder
+        print(posepipeline.folder)
         FileIO.putFileWithJson(data,"pipeline",posepipeline.folder+"/")
 
 
@@ -377,7 +386,7 @@ def main(path,view=True):
             datatosave['corners']=corners
         
 
-        if(view==True):
+        if(view):
             #see and save resulting scene
             print(posepipeline.posescalculator.R)
             print(posepipeline.posescalculator.t)
@@ -391,9 +400,7 @@ def main(path,view=True):
                 "T":posepipeline.posescalculator.recordedTs
             }
 
-            print(len(recordeddata['R']))
 
-            print(len(recordeddata['T']))
 
             FileIO.saveAsPickle("/recorded",recordeddata,posepipeline.folder,False,False)
         

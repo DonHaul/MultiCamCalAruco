@@ -89,7 +89,8 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
             #picks a set of detected arucos for this camera
             rnds = random.sample(range(0, len(self.Rcangalho)), self.n_obs)
 
-            print(rnds)
+            if self.view:
+                print("Corners Detected",rnds)
 
             #for every observed aruco fetches the detected corners
             for j in range(len(rnds)):
@@ -98,8 +99,7 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
             #fetches them from the corners
             #print(cornersPos.shape)
 
-            print("DETECTED CORNSs")
-            print(detectedcorns.shape)
+
 
             #detectedcorns=cornersPos
             #REPLACE detectedcorns with cornersPos to see all corners
@@ -144,12 +144,7 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
             #readd noise later
             pts2D=pts2D+np.random.randn(pts2D.shape[0],pts2D.shape[1])*self.pixelnoisestd
             
-            
-            #print(pts2D.shape)
-            #print(detectedcorns.shape)
-            #print(type(pts2D[0,0]))
 
-            print(pts2D.shape)
 
             #initialize conrers
             cornsformatted = np.zeros((len(rnds),1,4,2))
@@ -159,9 +154,6 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
                 cornsformatted[j,0,:,:]=aux
 
 
-           
-
-            print(pts2D.shape)
 
             rots,tvecs,img = aruco.FindPoses(self.K,np.array([0.0,0.0,0.0,0.0]),cornsformatted,img,len(rnds),self.arucoData['size'])
 
@@ -178,8 +170,9 @@ class CangalhoSynthObsMaker2(ObservationsMaker.ObservationsMaker):
             #generate observations
             observsR, observsT = obsgen.ArucoRealObsGenner(rnds,rots,tvecs,captureT=True,captureR=True)
 
-            print(observsR)
-            print(observsT)
+            if self.view==True:
+                print(observsR)
+                print(observsT)
             #retval, orvec, otvec = cv2.solvePnP(detectedcorns.T,pts2D.T,self.K,np.array([0,0,0,0]), useExtrinsicGuess=False,flags = cv2.SOLVEPNP_ITERATIVE)
 
 

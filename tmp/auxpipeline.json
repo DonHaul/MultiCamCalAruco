@@ -4,8 +4,8 @@
     },
     "model": {
         "noiset": 0.5,
-        "pixelnoisestd": 0.1,
-        "n_detectedarucos": 5,
+        "pixelnoisestd": 5,
+        "n_detectedarucos": 12,
         "K": [
             460.0,
             0.0,
@@ -18,7 +18,7 @@
             1.0
         ],
         "arucomodel": "./static/arucoModelNEW.pickle",
-        "samples": 10,
+        "samples": 240,
         "type": "SYNTH_CANGALHO2",
         "arucodata": "./static/ArucoWand.json"
     }

@@ -96,6 +96,9 @@ def getIntrinsics(camNames):
 
     Args:
         camNames [String]: list of all existing camera names
+    Outputs:
+        intrinsics[camname1]['rgb']['K']
+        intrinsics[camname2]['depth']['D']
     '''
     
     intrinsics={}

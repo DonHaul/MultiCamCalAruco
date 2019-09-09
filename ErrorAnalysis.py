@@ -86,7 +86,10 @@ with open(folderpath+'/__errtables.csv', 'wb') as csvfile:
                         errorMeasures.append(error[m][stat])
 
                 #addline
-                filewriter.writerow([resultsfolder,pxstd,n_obs,samps,ncr(n_obs,samps),ncr(n_obs,samps)*samps]+errorMeasures)
+                filewriter.writerow([resultsfolder,pxstd,n_obs,samps,ncr(n_obs,2),ncr(n_obs,2)*samps]+errorMeasures)
+
+
+                print(pxstd,n_obs,samps)
 
 
 
