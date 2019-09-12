@@ -16,27 +16,29 @@ import time
 import struct
 
 
-
+import tf
 
 import sys
 
 from libs import *
 
-def main(argv):
+def main():
     
     #vol = o3d.visualization.read_selection_polygon_volume("../../TestData/Crop/cropped.json")
 
-    rospy.init_node('echoes act III', anonymous=True)
+    rospy.init_node('echoes_act_III', anonymous=True)
     
     pchull = rospy.wait_for_message("/boxcast", PointCloud2)
 
     pc = point_cloud2.read_points_list(pchull, skip_nans=False)
 
+  
+
     x=[]
     y=[]
     z=[]
 
-    
+    camname = "diavolo"
 
 
     for point in pc:
@@ -46,16 +48,47 @@ def main(argv):
 
     roi = np.vstack([x,y,z])
 
-    pc2cropper = Pc2Crop(roi,"hello",pchull.header.frame_id)
+    roivec = open3d.Vector3dVector(roi.T)
+    roipoly = open3d.visualization.SelectionPolygonVolume()
+
+    tfer = tf.TransformListener()
+
+    print(tfer.frameExists("/diavolo"))
+    
+    print(tfer.frameExists(pchull.header.frame_id))
+    
+    
+
+    tfer.waitForTransform(pchull.header.frame_id, camname, rospy.Time(0),rospy.Duration(40.0))
+
+
+
+    trans,rot = tfer.lookupTransform(pchull.header.frame_id, camname, rospy.Time(0))
+   
+
+    H = tf.transformations.quaternion_matrix(rot)
+
+    #H = mmnip.Rt2Homo(H[0:3,0:3],trans)
+    R = H[0:3,0:3]
+    t = trans
+    
+    quit()
+
+    roipoly.bounding_polygon= roivec
+    
+
+
 
     #receive transform
 
-    camname = "diavolo"
+ 
 
-    pctopic="/camera/depth_registered/points"
-    #pctopic="/camera/depth/points"
+    pc2cropper = Pc2Crop(roipoly,tf,pchull.header.frame_id,camname)
 
-    rospy.Subscriber(name+pctopic, PointCloud2,pc2cropper.PublishPC2callback)
+    #pctopic="/camera/depth_registered/points"
+    pctopic="/depth/points"
+
+    rospy.Subscriber(camname+pctopic, PointCloud2,pc2cropper.PublishPC2callback)
 
     try:
         rospy.spin()
@@ -66,29 +99,36 @@ def main(argv):
 
 class Pc2Crop():
 
-    def __init__(self,roi,tf,roireference):
-        self.roi = roi
+    def __init__(self,roipoly,tf,roireference,camname):
+        self.roipoly = roipoly
         self.tf = tf
         self.roireference = roireference
+        self.camname = camname
+
+        self.pub = rospy.Publisher(camname+"/croppedpc",PointCloud2,queue_size=1)
 
     def PublishPC2callback(self,data):
         
         #data is the pc
+        
         pc = point_cloud2.read_points_list(data, skip_nans=False)
 
         x=[]
         y=[]
         z=[]
-        r=[]
-        g=[]
-        b=[]
+        
+        #r=[]
+        #g=[]
+        #b=[]
 
         for point in pc:
             x.append(point[0])
             y.append(point[1])
             z.append(point[2])
 
+            '''
             rgb = point[3]
+
 
             ba = bytearray(struct.pack("f", rgb))  
 
@@ -109,26 +149,30 @@ class Pc2Crop():
         b=np.asarray(b)
 
         rgb = np.vstack([r,g,b])
+        '''
         xyz = np.vstack([x,y,z])
         
         #this is the open pc pointcloud
-        pc = pointclouder.Points2Cloud(xyz.T,rgb.T)
+        pc = pointclouder.Points2Cloud(xyz.T) #,rgb.T
         
-        pcROI = self.roi.crop_point_cloud(pc )
+        pcROI = self.roipoly.crop_point_cloud(pc)
+
 
         points = []
-        for i in range(len (max(xyz.shape))):
+        print(xyz.shape)
+        
+        for i in range(xyz.shape[1]):
 
-            rgb = struct.unpack('I', struct.pack('BBBB', colori[0], colori[1], colori[2], 255))[0]
+            #rgb = struct.unpack('I', struct.pack('BBBB', colori[0], colori[1], colori[2], 255))[0]
             
-            pt = xyz[i,:] + [rgb]
+            pt = xyz[:,i] #+ [rgb]
             points.append(pt)
 
         fields = [PointField('x', 0, PointField.FLOAT32, 1),
                 PointField('y', 4, PointField.FLOAT32, 1),
                 PointField('z', 8, PointField.FLOAT32, 1),
                 # PointField('rgb', 12, PointField.UINT32, 1),
-                PointField('rgba', 12, PointField.UINT32, 1),
+                #PointField('rgba', 12, PointField.UINT32, 1),
                 ]
 
         #print points
@@ -136,12 +180,14 @@ class Pc2Crop():
         header = Header()
         header.frame_id = "killerqueen"
         pc2 = point_cloud2.create_cloud(header, fields, points)
-
-        print("boom")
+        
+        #pctemp = data
+       
         #while not rospy.is_shutdown():
         pc2.header.stamp = rospy.Time.now()
         self.pub.publish(pc2)
-            #rospy.sleep(1.0)
+        print("Published")
+        
 
 
 

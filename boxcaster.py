@@ -59,7 +59,7 @@ def main():
     #print points
 
     header = Header()
-    header.frame_id = "killerqueen"
+    header.frame_id = "/killerqueen"
     pc2 = point_cloud2.create_cloud(header, fields, points)
     
 
