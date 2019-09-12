@@ -38,7 +38,7 @@ def main():
     y=[]
     z=[]
 
-    camname = "diavolo"
+    camname = "killerqueen"
 
 
     for point in pc:
@@ -48,37 +48,40 @@ def main():
 
     roi = np.vstack([x,y,z])
 
-    roivec = open3d.Vector3dVector(roi.T)
-    roipoly = open3d.visualization.SelectionPolygonVolume()
 
     tfer = tf.TransformListener()
 
-    print(tfer.frameExists("/diavolo"))
+    print(tfer.frameExists(camname))
     
     print(tfer.frameExists(pchull.header.frame_id))
     
     
 
-    tfer.waitForTransform(pchull.header.frame_id, camname, rospy.Time(0),rospy.Duration(40.0))
+    tfer.waitForTransform(camname,pchull.header.frame_id, rospy.Time(0),rospy.Duration(40.0))
 
 
 
-    trans,rot = tfer.lookupTransform(pchull.header.frame_id, camname, rospy.Time(0))
-   
+    trans,rot = tfer.lookupTransform(camname,pchull.header.frame_id, rospy.Time(0))
+    print(trans,rot)
 
     H = tf.transformations.quaternion_matrix(rot)
 
     #H = mmnip.Rt2Homo(H[0:3,0:3],trans)
     R = H[0:3,0:3]
-    t = trans
+    t = np.array(trans)
+
+    print(type(t))
+    #roi = mmnip.Transform(roi,R,t)
+    roivec = open3d.Vector3dVector(roi.T)
+
+    roipoly = open3d.visualization.SelectionPolygonVolume()
+
+    roipoly.bounding_polygon = roivec
+    roipoly.orthogonal_axis = "Y"
+    roipoly.axis_max = 100.0
+    roipoly.axis_min = -100.0
     
-    quit()
-
-    roipoly.bounding_polygon= roivec
-    
-
-
-
+    print(np.asarray(roipoly.bounding_polygon))
     #receive transform
 
  
@@ -111,7 +114,7 @@ class Pc2Crop():
         
         #data is the pc
         
-        pc = point_cloud2.read_points_list(data, skip_nans=False)
+        pc = point_cloud2.read_points_list(data, skip_nans=True)
 
         x=[]
         y=[]
@@ -125,6 +128,7 @@ class Pc2Crop():
             x.append(point[0])
             y.append(point[1])
             z.append(point[2])
+            #print(point[0],point[1],point[2])
 
             '''
             rgb = point[3]
@@ -149,16 +153,24 @@ class Pc2Crop():
         b=np.asarray(b)
 
         rgb = np.vstack([r,g,b])
-        '''
+        #'''
         xyz = np.vstack([x,y,z])
         
         #this is the open pc pointcloud
-        pc = pointclouder.Points2Cloud(xyz.T) #,rgb.T
-        
-        pcROI = self.roipoly.crop_point_cloud(pc)
+        pco3d = pointclouder.Points2Cloud(xyz.T) #,rgb.T
+        print(pco3d)
+        pco3d.paint_uniform_color([1,0.706,0])
 
+        
+        open3d.visualization.draw_geometries_with_editing([pco3d])
+
+        pcROI = self.roipoly.crop_point_cloud(pco3d)
+        quit()
+        print("pc")
+        print(pcROI)
 
         points = []
+        print(xyz)
         print(xyz.shape)
         
         for i in range(xyz.shape[1]):
@@ -177,8 +189,7 @@ class Pc2Crop():
 
         #print points
 
-        header = Header()
-        header.frame_id = "killerqueen"
+        header = data.header
         pc2 = point_cloud2.create_cloud(header, fields, points)
         
         #pctemp = data

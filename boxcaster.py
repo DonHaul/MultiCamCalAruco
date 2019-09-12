@@ -21,7 +21,7 @@ import time
 
 def main():
 
-
+    '''
     vertexhull=[
         [-1,-1,0.3],
         [-1,1,0.3],
@@ -32,6 +32,15 @@ def main():
         [1,-1,2],
         [1,1,2]
     ]
+    '''
+
+    vertexhull=[
+        [-100,0,-100],
+        [-100,0,100],
+        [100,0,-100],
+        [100,0,100],
+    ]
+
     
 
     rospy.init_node('seven_page_muda', anonymous=True)
