@@ -51,6 +51,7 @@ class Ros2Img:
     
     def callback(self,*args):
 
+        print("YE")
         for i in range(self.N_cams):
             rgb = IRos.rosImg2RGB(args[i])
             #depth_reg = IRos.rosImg2Depth(args[1])

@@ -373,8 +373,6 @@ def GetCangalhoFromMarkersPnP(ids,det_corners,K,D,arucoData,arucoModel,guess=Non
 
     for i in range(len(ids)):
 
-        print("WHAAT")
-        print(arucoModel)
         corns = Get3DCorners(ids[i],arucoData,arucoModel)
         
         corn3D = np.vstack((corns[0],corns[1],corns[2],corns[3]))
