@@ -22,7 +22,7 @@ import sys
 
 from libs import *
 
-def main(argv):
+def main():
     
     #vol = o3d.visualization.read_selection_polygon_volume("../../TestData/Crop/cropped.json")
 
@@ -70,6 +70,7 @@ class Pc2Crop():
         self.roi = roi
         self.tf = tf
         self.roireference = roireference
+        self.isRGB=True
 
     def PublishPC2callback(self,data):
         
@@ -88,32 +89,45 @@ class Pc2Crop():
             y.append(point[1])
             z.append(point[2])
 
-            rgb = point[3]
+            if self.isRGB:
+                rgb = point[3]
 
-            ba = bytearray(struct.pack("f", rgb))  
+                ba = bytearray(struct.pack("f", rgb))  
 
-
-            count = 0
-            for bytte in ba:
-                if(count==0):
-                    r.append(255-bytte)
-                if(count==1):
-                    g.append(255-bytte)
-                if(count==2):
-                    b.append(255-bytte)
-                    
-                count=count+1
                 
-        r=np.asarray(r)
-        g=np.asarray(g)
-        b=np.asarray(b)
+                count = 0
+                for bytte in ba:
+                    if(count==0):
+                        r.append(255-bytte)
+                    if(count==1):
+                        g.append(255-bytte)
+                    if(count==2):
+                        b.append(255-bytte)
+                        
+                    count=count+1
 
-        rgb = np.vstack([r,g,b])
-        xyz = np.vstack([x,y,z])
+        rgb=None    
+        if self.isRGB:
+            r=np.asarray(r)
+            g=np.asarray(g)
+            b=np.asarray(b)
+
+            rgb = np.vstack([r,g,b]).T
+
+        xyz = np.vstack([x,y,z]).T
+
+
         
         #this is the open pc pointcloud
-        pc = pointclouder.Points2Cloud(xyz.T,rgb.T)
+        pc = pointclouder.Points2Cloud(xyz,rgb)
         
+
+
+        hull = ConvexHull(np.array([(1, 2), (3, 4), (3, 6)]))
+
+
+
+
         pcROI = self.roi.crop_point_cloud(pc )
 
         points = []
@@ -128,7 +142,7 @@ class Pc2Crop():
                 PointField('y', 4, PointField.FLOAT32, 1),
                 PointField('z', 8, PointField.FLOAT32, 1),
                 # PointField('rgb', 12, PointField.UINT32, 1),
-                PointField('rgba', 12, PointField.UINT32, 1),
+                #PointField('rgba', 12, PointField.UINT32, 1),
                 ]
 
         #print points
