@@ -3,7 +3,7 @@
         "rgbtopic":"/rgb/image_rect_color"
     },
     "model":{"type":"CANGALHO",
-        "arucodata": "./static/ArucoWand.json",
+        "arucodata": "./static/aruco17Set.json",
         "arucodetection":"singular",
         "cameras":[],
         "mode":{
