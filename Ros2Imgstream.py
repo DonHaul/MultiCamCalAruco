@@ -76,8 +76,6 @@ class Ros2Img:
 
 if __name__ == "__main__":
 
-    print(sys.argv[1])
-    
     folderpath="../ImageSets"
 
     if len(sys.argv)>1:

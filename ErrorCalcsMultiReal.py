@@ -58,8 +58,9 @@ def main(path,imgdirectory=None):
 
     print(info)
     frames = info['count']
+    camnames = info['camnames']
     
-    intrinsics = FileIO.getIntrinsics(info['camnames'])
+    intrinsics = FileIO.getIntrinsics(camnames)
     #K = intrinsics[camname]['rgb']['K']
     #D = intrinsics[camname]['rgb']['D']
         
@@ -71,9 +72,16 @@ def main(path,imgdirectory=None):
 
     data =  FileIO.getJsonFromFile( path + "/pipeline.json" )
 
+    print(data)
+
     arucoData =  FileIO.getJsonFromFile(data['model']['arucodata'])
 
-    arucoModel = FileIO.getFromPickle( path + "/poses.pickle" )
+    sceneModel = FileIO.getFromPickle( path + "/poses.pickle" )
+    
+
+    arucoModel = FileIO.getFromPickle( data['model']['arucomodel'])
+
+    curcorners = arucoModel['corners']
     
     arucoData['idmap'] = aruco.markerIdMapper(arucoData['ids'])    
  
@@ -105,106 +113,155 @@ def main(path,imgdirectory=None):
     count = 0
     imcount =0
 
+    colors=[]
+    colors.append([255,255,0])
+    colors.append([255,0,255])
+    colors.append([0,255,255])
+
 
     #go throuth every image or generate frames
     for i in range(0,frames):
 
-        for camname in camn
+        img={}
+        reprojected = {}
+        R ={}
+        t={}
+        valIds={}
+        detectcorns = {}
 
-        img = np.zeros((480,640,3),dtype=np.uint8)
+        othercounter=0
 
-        #set up a scene
-        
-        #real data
+        for camname in camnames:
 
-        #read image
-        img = cv2.imread(imgdirectory+camname + "_rgb_" + str(count) + ".png")
-        
+            img[camname] = np.zeros((480,640,3),dtype=np.uint8)
+            reprojected[camname]={}
 
+            #read image
+            img = cv2.imread(imgdirectory+camname + "_rgb_" + str(count) + ".png")
 
-        #pretty much a copy of cangalhoPnPDetector
+            #pretty much a copy of cangalhoPnPDetector
 
-        
-        #finds markers
-        det_corners, ids, rejected = aruco.FindMarkers(img, K)
-        
-    
+            
+            #finds markers
+            det_corners, ids, rejected = aruco.FindMarkers(img, intrinsics[camname]['rgb']['K'])
+            
+            #convert (n_detecions,4,2) into (2,n_detecions*4)
+            #pts2D = np.squeeze(det_corners).reshape(len(ids)*4,2).T
 
-        #convert (n_detecions,4,2) into (2,n_detecions*4)
-        #pts2D = np.squeeze(det_corners).reshape(len(ids)*4,2).T
-
-
-
-        validids=[]
-        validcordners= []
-
-        #in case there is only 1 id, convert it into a list with 1 element
-        if ids is not None:
-
-            ids = ids.squeeze()
-
-            if (helperfuncs.is_empty(ids.shape)):
-                ids=[int(ids)]
-
-        #fetch valid corners
-        if  ids is not None and len(ids)>0:
-
-            #filter ids and cornerds
             validids=[]
             validcordners= []
 
-            #fetch valid ids and corners
-            for k in range(0,len(ids)):
-                if ids[k] in arucoData['ids']:
-    
-                    validids.append(ids[k])
-                    validcordners.append(det_corners[k]) 
+            #in case there is only 1 id, convert it into a list with 1 element
+            if ids is not None:
+
+                ids = ids.squeeze()
+
+                if (helperfuncs.is_empty(ids.shape)):
+                    ids=[int(ids)]
+
+            #fetch valid corners
+            if  ids is not None and len(ids)>0:
+
+                #filter ids and cornerds
+                validids=[]
+                validcordners= []
+
+                #fetch valid ids and corners
+                for k in range(0,len(ids)):
+                    if ids[k] in arucoData['ids']:
         
-            #fetch valiid 2D points
-            pts2D = np.squeeze(validcordners).reshape(len(validids)*4,2).T
+                        validids.append(ids[k])
+                        validcordners.append(det_corners[k]) 
+            
+                #fetch valiid 2D points, squeezes and reshaped so that they can be easily read by pts2Ddisplay
+                pts2D = np.squeeze(validcordners).reshape(len(validids)*4,2).T
 
-            pts2DISPLAY2D = pts2D.astype(int)
-            for j in range(pts2DISPLAY2D.shape[-1]):   
-                img = visu.paintImage(img,[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=[0,255,0])
+                #this corresponds to the projected
+                reprojected[camname][camname]=pts2D
 
-            #fetch valid 3D Corners
-            #holds the corner positions in the virgin model
-            detectedcornsobtainedmodel = np.zeros((3,len(validids)*4))
-
-            for j in range(len(validids)):
-                idd = arucoData['idmap'][str(validids[j])]
-                #print(curcorners.shape)
-                #print(validids[j]*4,validids[j]*4+4)
-                #print(curcorners.T[:,validids[j]*4:validids[j]*4+4].shape)
-                #this correspond the the obtained model corners
-                detectedcornsobtainedmodel[:,j*4:j*4+4] = curcorners.T[:,idd*4:idd*4+4]
+                pts2DISPLAY2D = pts2D.astype(int)
+                for j in range(pts2DISPLAY2D.shape[-1]):   
+                    img[camname] = visu.paintImage(img[camname],[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=colors[othercounter])
 
 
-            Rfull,otvec = aruco.GetCangalhoFromMarkersPnP(validids,validcordners,K,D,arucoData,arucoModel)
+                #fetch valid 3D Corners
+                #holds the corner positions in the virgin model 
+                detectedcornsobtainedmodel = np.zeros((3,len(validids)*4))
 
-            #convert to rotation vector
-            orvec,_ = cv2.Rodrigues(Rfull)
+                for j in range(len(validids)):
+                    idd = arucoData['idmap'][str(validids[j])]
+                    #print(curcorners.shape)
+                    #print(validids[j]*4,validids[j]*4+4)
+                    #print(curcorners.T[:,validids[j]*4:validids[j]*4+4].shape)
+
+                    #this correspond the the obtained model corners, in the virgin model
+                    detectedcornsobtainedmodel[:,j*4:j*4+4] = curcorners.T[:,idd*4:idd*4+4]
+
+                #save in dict 
+                detectcorns[camname] = detectedcornsobtainedmodel
+
+                #get current seen model R and T
+                Rfull,otvec = aruco.GetCangalhoFromMarkersPnP(validids,validcordners,intrinsics[camname]['rgb']['K'],intrinsics[camname]['rgb']['D'],arucoData,arucoModel)
+
+                #convert to rotation vector
+                orvec,_ = cv2.Rodrigues(Rfull)
 
 
+                valIds[camname] = validids
+                R[camname] = orvec
+                t[camname] = otvec
+
+            minicounter = 0
+
+            for othercam in camnmames:
+
+                
+                if othercam == camname:
+                    minicounter = minicounter + 1
+                    continue
+
+                
+                #transform valids id of this cam seen in the other cam into this cameras coordinates
 
 
-        #reproject
-        pts2Dobtained = cv2.projectPoints(detectedcornsobtainedmodel.T, orvec , otvec,K,np.zeros((5,1),dtype=float))[0].T
-        pts2Dobtained = np.squeeze(pts2Dobtained)
+                #convert from virgin to other Cam coordinates
+                newcorns = mmnip.Transform(detectcorns[camname],R[othercam],t[othercam])
+
+                #convert from other Cam to this cam coordinates
+                Rbetweencams = np.dot(sceneModel[camname]['R'].T,sceneModel[othercam]['R'].T)
+                tbetweencams = np.dot(sceneModel[camname]['R'].T, sceneModel[othercam]['t'] - sceneModel[camname]['t'])
 
 
+                newcorns = mmnip.Transform(detectcorns[camname],Rbetweencams,tbetweencams)
 
-        if not synth:
+                
+                #we now need to project points from every camera into this camera
 
-            #get pose
-            retval, orvec, otvec2 = cv2.solvePnP(detectedcornsobtainedmodel.T,pts2Dobtained.T,K,np.array([0,0,0,0]), useExtrinsicGuess=False,flags = cv2.SOLVEPNP_ITERATIVE)
+                #get R and t in the other cam (no transformation is dones since all that is handled above)
+                pts2Dobtained = cv2.projectPoints(newcorns.T, np.eye(3) , np.zeros((3,1)),intrinsics[camname]['rgb']['K'],np.zeros((5,1),dtype=float))[0].T
+                pts2Dobtained = np.squeeze(pts2Dobtained)
 
-            orvec = cv2.Rodrigues(orvec)[0]
+                reprojected[camname][othercam] = pts2Dobtained
+
+                #paint the image
+                pts2DISPLAY2D = pts2Dobtained.astype(int)
+                for j in range(pts2DISPLAY2D.shape[-1]):   
+                    img[camname] = visu.paintImage(img[camname],[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=colors[minicounter])
+
+                cv2.imshow('image',img[camname])
+                cv2.waitKey(1000)
 
 
-        pts2DISPLAY2D = pts2Dobtained.astype(int)
-        for j in range(pts2DISPLAY2D.shape[-1]):   
-            img = visu.paintImage(img,[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=[0,0,250])
+                minicounter = minicounter + 1
+
+            othercounter=othercounter+1
+
+            cv2.imshow('image',img[camname])
+            cv2.waitKey(1000)
+                
+
+        #remove this break after
+        break
 
         #cv2.imshow('image',img)
         #cv2.waitKey(1000)
@@ -218,6 +275,10 @@ def main(path,imgdirectory=None):
         #reprojection error 
         curreprojectionerror = np.linalg.norm(pts2Dobtained - pts2D,axis=0)
 
+
+
+            #get pose
+            
         #for the synth, orvec is the estimated rotation, and Rfull is the ground truth rotation
         # for the real, orvec is saved model pnp estimated rotation and Rfull is the observer rotation from the image
         #the error rotation matrix
