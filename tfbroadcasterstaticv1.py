@@ -29,7 +29,7 @@ def main(argv):
     scene = FileIO.getFromPickle(argv[1])
         
 
-    print(scene)
+    #print(scene)
 
 
 
@@ -56,7 +56,7 @@ def main(argv):
         static_tfs.append(static_transformStamped)
 
 
-        print("Hello")
+        print("Connected:",scene['camnames'][i],"world")
 
     broadcaster= tf2_ros.StaticTransformBroadcaster()
     broadcaster.sendTransform(static_tfs)

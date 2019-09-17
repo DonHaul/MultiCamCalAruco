@@ -12,7 +12,7 @@ from libs import FileIO
        
 
 class Ros2Img:
-    def __init__(self,folderpath="../ImageSets"):
+    def __init__(self,folderpath="../ImageSets",camNames=None):
 
         self.freq=0.0001
 
@@ -21,7 +21,8 @@ class Ros2Img:
         
         self.folderpath =  FileIO.CreateFolder(self.folderpath+"/",True,"_"+FileIO.GetAnimalName())
 
-        self.camNames = IRos.getAllPluggedCameras()
+        if camNames is None:
+            self.camNames = IRos.getAllPluggedCameras()
 
        
         self.N_cams= len(self.camNames)
@@ -71,7 +72,7 @@ class Ros2Img:
 if __name__ == "__main__":
     folderpath = sys.argv[1]
 
-    r2i = Ros2Img(folderpath)
+    r2i = Ros2Img(folderpath,folderpath="../ImageSets",camNames=sys.argv[2:])
 
     try:
         print("SPINN")

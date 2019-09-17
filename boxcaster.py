@@ -21,46 +21,47 @@ import time
 
 def main():
 
+  
+    halfedge=2.0
+    dist = 3.0
 
-    vertexhull=[
-        [-1,-1,0.3],
-        [-1,1,0.3],
-        [1,-1,0.3],
-        [1,1,0.3],
-        [-1,-1,2],
-        [-1,1,2],
-        [1,-1,2],
-        [1,1,2]
-    ]
-    
+    #vertices for the boundaries, it can be any shape, a cube is used for simplicity
+    vertexhull=np.asarray([
+        [-halfedge,-halfedge,0.3],
+        [-halfedge,halfedge,0.3],
+        [halfedge,-halfedge,0.3],
+        [halfedge,halfedge,0.3],
+        [-halfedge,-halfedge,dist],
+        [-halfedge,halfedge,dist],
+        [halfedge,-halfedge,dist],
+        [halfedge,halfedge,dist]
+    ])
+
+
+    print(vertexhull)
+ 
 
     rospy.init_node('seven_page_muda', anonymous=True)
 
-
+    #publisher box cast
     pub = rospy.Publisher("boxcast", PointCloud2, queue_size=2)
 
-    points = []
-
-    for i in range(len(vertexhull)):
-
-        #print hex(rgb)
-        pt = [vertexhull[i][0], vertexhull[i][1], vertexhull[i][2]]
-        points.append(pt)
+   
 
     print("Vertices loader")
 
+    #configure header
     fields = [PointField('x', 0, PointField.FLOAT32, 1),
             PointField('y', 4, PointField.FLOAT32, 1),
             PointField('z', 8, PointField.FLOAT32, 1),
-            # PointField('rgb', 12, PointField.UINT32, 1),
-            #PointField('rgba', 12, PointField.UINT32, 1),
             ]
 
-    #print points
+    
 
+    #create point
     header = Header()
-    header.frame_id = "killerqueen"
-    pc2 = point_cloud2.create_cloud(header, fields, points)
+    header.frame_id = "/killerqueen"
+    pc2 = point_cloud2.create_cloud(header, fields, vertexhull)
     
 
     while not rospy.is_shutdown():
