@@ -16,15 +16,20 @@ class Ros2Img:
 
         self.freq=0.0001
 
+    
+
         self.folderpath = folderpath
 
         
         self.folderpath =  FileIO.CreateFolder(self.folderpath+"/",True,"_"+FileIO.GetAnimalName())
 
-        if camNames is None:
+        
+        if camNames is None or len(camNames)==0:
             self.camNames = IRos.getAllPluggedCameras()
 
        
+        print(self.camNames)
+
         self.N_cams= len(self.camNames)
 
         self.view=False
@@ -70,9 +75,15 @@ class Ros2Img:
 
 
 if __name__ == "__main__":
-    folderpath = sys.argv[1]
 
-    r2i = Ros2Img(folderpath,folderpath="../ImageSets",camNames=sys.argv[2:])
+    print(sys.argv[1])
+    
+    folderpath="../ImageSets"
+
+    if len(sys.argv)>1:
+        folderpath = sys.argv[1]
+
+    r2i = Ros2Img(folderpath=folderpath,camNames=sys.argv[2:])
 
     try:
         print("SPINN")

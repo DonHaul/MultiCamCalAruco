@@ -5,7 +5,7 @@
     },
     "model":{"type":"CAMERA",
         "arucodata": "./static/ArucoWand.json",
-        "arucomodel":"./static/arucoModelNEW.pickle",
+        "arucomodel":"./static/aruco17Set.pickle",
         "arucodetection":"allforone",
         "cameras":[],
         "mode":{

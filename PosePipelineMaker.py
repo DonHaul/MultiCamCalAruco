@@ -376,7 +376,7 @@ def main(path,view=True):
         #compute the corners of the cangalho
         if data['model']['type']=='CANGALHO' or data['model']['type']=='SYNTH_CANGALHO2':
 
-            arucoModel = {"R":posepipeline.posescalculator.R,"T":posepipeline.posescalculator.t}
+            arucoModel = {"R":posepipeline.posescalculator.R,"t":posepipeline.posescalculator.t}
 
             corners = aruco.ComputeCorners(state['arucodata'],arucoModel)
 
