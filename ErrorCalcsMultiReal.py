@@ -6,6 +6,7 @@ import datetime
 import sys
 import csv
 import time
+import open3d
 
 def InitializeStats(statstext, measurestext):
 
@@ -20,7 +21,54 @@ def InitializeStats(statstext, measurestext):
 
     return errorData
 
+def MultTranslError(trans):
+    brah = 0
+    
+    cumnorm = 0
+
+    for m in range(len(trans)):
+        for n in range(m+1,len(trans)):
+            brah = brah+1
+
+            cumnorm = cumnorm + np.linalg.norm(trans[n]-trans[m])
+
+    return cumnorm/brah
+
+def MultRotError(rot):
+    brah = 0
+    
+    curanglz = 0
+
+    riguezerror=0
+
+
+
+    for m in range(len(rot)):
+        for n in range(m+1,len(rot)):
+            brah = brah+1
+
+            errorRot = np.dot(rot[m],rot[n].T) 
+
+            val = ((np.trace(errorRot) - 1) / 2)
             
+            
+            if val > 1:
+                val=1
+
+            #angle error
+            curanglz = curanglz + np.rad2deg(np.arccos(val))
+
+            rodrize = cv2.Rodrigues(errorRot)[0]
+            
+
+            #rodriguez error (norm of rotation vector)
+            riguezerror = riguezerror + np.linalg.norm(rodrize)
+
+    return riguezerror/brah , curanglz/brah
+
+
+           
+        
 
 
 def GenSimpleStats(errorMeasure,measurename,errorData,statstext=None):
@@ -112,16 +160,22 @@ def main(path,imgdirectory=None,saveImgs=True):
     ndetectedarucos = []
     angleerrors = []
 
+    nactivecams = []
+
     count = 0
     imcount =0
 
     colors=[]
-    colors.append([255,255,0])
-    colors.append([255,0,255])
-    colors.append([0,255,255])
+    colors.append([1, 1, 0])
+    colors.append([1,0,1])
+    colors.append([0,1,1])
 
+    cangalhotranslerr = []
+    cangalhorotriguezerr = []
+    cangalhorotangleerr = []
     fullcrossreprojectionerror =[]
     crossreprojectionerr={}
+
     for cam in camnames:
 
         crossreprojectionerr[cam]=[]
@@ -230,21 +284,64 @@ def main(path,imgdirectory=None,saveImgs=True):
         brr =[]
         btt = []
 
-        '''
-        #print cangalho pos in world coordinates
+        geometries = []
+        
+        #GET 3D VIZUALIZATION + CANGALHO ERRORS
+        camcount = 0
         for camname in camnames:
                     
+            
+            if camname not in detectcorns:
+                camcount = camcount + 1
+                continue
 
-         thiscamId = sceneModel['camnames'].index(camname)
-         rotation = np.dot(sceneModel['R'][thiscamId],R[camname])
-         translation = mmnip.Transform(t[camname],sceneModel['R'][thiscamId],sceneModel['t'][thiscamId])
-         print(rotation)
-         print(translation)
-         brr.append(rotation)
-         btt.append(translation)
+            thiscamId = sceneModel['camnames'].index(camname)
+            rotation = np.dot(sceneModel['R'][thiscamId],R[camname])
+            translation = mmnip.Transform(t[camname],sceneModel['R'][thiscamId],sceneModel['t'][thiscamId])
+ 
 
-        #visu.ViewRefs(brr,btt,refSize=0.1)
-        '''
+            brr.append(rotation)
+            btt.append(translation)
+
+            camref = open3d.create_mesh_coordinate_frame(0.2, origin = [0, 0, 0])
+            camref.transform(mmnip.Rt2Homo(sceneModel['R'][thiscamId],np.squeeze(sceneModel['t'][thiscamId])))
+            geometries.append(camref)
+
+            camera = visu.DrawCamera(sceneModel['R'][thiscamId],sceneModel['t'][thiscamId],color=colors[camcount],view=False)
+            sphere = open3d.create_mesh_sphere(0.016)
+            sphere.compute_vertex_normals()
+
+            H = mmnip.Rt2Homo(rotation,np.squeeze(translation))
+
+            #prints marker position estimates
+            refe = open3d.create_mesh_coordinate_frame(0.1, origin = [0, 0, 0])
+            refe.transform(H)
+            sphere.transform(H)
+            sphere.paint_uniform_color(colors[camcount])
+
+            geometries.append(refe)
+            geometries.append(sphere)
+            geometries.append(camera)
+
+
+            camcount = camcount+1
+
+        #visu.draw_geometry(geometries,saveImg=True,saveName=mediapath + "/"+"SCENE"+"_"+str(i)+".png")
+        
+
+        #geometries = visu.ViewRefs(brr,btt,refSize=0.1),view = False
+        
+        cangalhotranslerr.append(MultTranslError(brr))
+        rotrig,rotangle = MultRotError(brr)
+        cangalhorotriguezerr.append(rotrig)
+        cangalhorotangleerr.append(rotangle)
+
+
+        normerr = {}
+        #number of acitves cams per cam
+        activecamcount = {}
+        #number of corners
+        nactivecorns = {}
 
         #start cross reprojecting
         for camname in camnames:
@@ -303,22 +400,34 @@ def main(path,imgdirectory=None,saveImgs=True):
 
                 minicounter = minicounter + 1
 
-                normerr[camname] = np.linalg.norm(detectcorns[camname] - detectcorns[othercam],axis=0)
 
-            normerr[camname] = normerr[camname] / activecamcounter
+                normerr[camname] = np.linalg.norm(reprojected[camname][camname] - reprojected[camname][othercam],axis=0)
+                activecamcount[camname] = activecamcounter
+                nactivecorns[camname] = reprojected[camname][camname][1]
+
 
             #sums the errors in single image
-            crossreprojectionerr[camname].append(normerr[camname])
-            
+            fullreperr = 0
 
-            errorData = GenSimpleStats(curreprojectionerror.tolist(),'reprojection_'+str(i) , errorData,statstext)
+
+
+
+            #camcount
+            for cam in camnames:
+
+                #if camera has no detected corners
+                if camname not in normerr:
+                        minicounter = minicounter + 1
+                        continue
+
+                fullreperr = normerr[camname]/(activecamcount[camname]*nactivecorns[camname]) + fullreperr
+
+            fullcrossreprojectionerror.append(fullreperr)
+         
 
             #cv2.imshow('image',img[camname])
             #cv2.imwrite(mediapath + "/"+camname+"_"+str(i)+".png",img[camname])
-        
 
-                
-        fullcrossreprojectionerror.append()
             
 
         #cv2.imshow("Detected Markers",img)

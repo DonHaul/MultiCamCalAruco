@@ -23,6 +23,33 @@ def plotImg(img):
     plt.waitforbuttonpress()
     plt.close(fig)
 
+def DrawCamera(Rcam,Tcam,color=None, view=False):
+
+    cam = []
+    
+    mesh = open3d.read_triangle_mesh("./static/camera.ply")
+
+    H=mmnip.Rt2Homo(np.dot(Rcam, mmnip.genRotMat([90,0,90])),np.dot(np.array([-0.09,0.005,0]),Rcam.T)+np.squeeze(Tcam))
+
+    mesh.transform(H)
+
+    mesh.compute_vertex_normals()
+    
+    if color is not None:
+        mesh.paint_uniform_color(color)
+
+    mesh.compute_vertex_normals()
+
+    #mesh.compute_triangle_normals()
+
+    
+    if view:
+        draw_geometry(mesh)
+
+
+
+    return mesh
+
 def DrawScene(points2display,Rcam,Tcam):
 
 
@@ -38,6 +65,7 @@ def DrawScene(points2display,Rcam,Tcam):
 
     draw_geometry(points + [mesh])
 
+    return [mesh]
     
 
 def draw_geometry(pcd,saveImg = False,saveName=None):
@@ -56,7 +84,7 @@ def draw_geometry(pcd,saveImg = False,saveName=None):
     vis = open3d.Visualizer()
 
     #creates the window
-    vis.create_window(width=800 ,height=600)
+    vis.create_window(width=1920 ,height=1080)
 
     #fetches its options
     opt = vis.get_render_option()
