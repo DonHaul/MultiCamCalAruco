@@ -297,7 +297,7 @@ def main(path,imgdirectory=None):
                 #convert to rotation vector
                 orvec,_ = cv2.Rodrigues(Rfull)
 
-
+   
 
 
         #reproject

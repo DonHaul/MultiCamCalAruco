@@ -120,6 +120,11 @@ def main(path,imgdirectory=None,saveImgs=True):
     colors.append([255,0,255])
     colors.append([0,255,255])
 
+    fullcrossreprojectionerror =[]
+    crossreprojectionerr={}
+    for cam in camnames:
+
+        crossreprojectionerr[cam]=[]
 
     #go throuth every image or generate frames
     for i in range(0,frames):
@@ -245,6 +250,8 @@ def main(path,imgdirectory=None,saveImgs=True):
         for camname in camnames:
 
             minicounter = 0
+            activecamcounter = 0
+            
 
             print("LOOP",camname)
             for othercam in camnames:
@@ -254,7 +261,7 @@ def main(path,imgdirectory=None,saveImgs=True):
                     minicounter = minicounter + 1
                     continue
 
-                
+                activecamcounter = activecamcounter + 1
          
                 
                 thiscamId = sceneModel['camnames'].index(camname)
@@ -296,18 +303,24 @@ def main(path,imgdirectory=None,saveImgs=True):
 
                 minicounter = minicounter + 1
 
-            #cv2.imshow('image',img[camname])
-            cv2.imwrite(mediapath + "/"+camname+"_"+str(i)+".png",img[camname])
+                normerr[camname] = np.linalg.norm(detectcorns[camname] - detectcorns[othercam],axis=0)
+
+            normerr[camname] = normerr[camname] / activecamcounter
+
+            #sums the errors in single image
+            crossreprojectionerr[camname].append(normerr[camname])
             
+
+            errorData = GenSimpleStats(curreprojectionerror.tolist(),'reprojection_'+str(i) , errorData,statstext)
+
+            #cv2.imshow('image',img[camname])
+            #cv2.imwrite(mediapath + "/"+camname+"_"+str(i)+".png",img[camname])
+        
+
                 
+        fullcrossreprojectionerror.append()
+            
 
-        #remove this break after
-        
-
-        #cv2.imshow('image',img)
-        #cv2.waitKey(1000)
-
-        
         #cv2.imshow("Detected Markers",img)
         count = count + 1
 
