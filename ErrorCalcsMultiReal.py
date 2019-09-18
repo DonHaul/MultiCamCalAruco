@@ -46,7 +46,7 @@ def GenSimpleStats(errorMeasure,measurename,errorData,statstext=None):
 
 
 
-def main(path,imgdirectory=None):
+def main(path,imgdirectory=None,saveImgs=True):
     #path = "./Logs/2019-09-01_18:07:51_coyote"
     view=False
 
@@ -60,15 +60,17 @@ def main(path,imgdirectory=None):
     frames = info['count']
     camnames = info['camnames']
     
+    print(camnames)
+
     intrinsics = FileIO.getIntrinsics(camnames)
     #K = intrinsics[camname]['rgb']['K']
     #D = intrinsics[camname]['rgb']['D']
         
 
 
- 
+   
 
-    mediapath = FileIO.CreateFolder("../Media/reprojections",putDate=True)
+    mediapath = FileIO.CreateFolder("../Media2/reprojections",putDate=True)
 
     data =  FileIO.getJsonFromFile( path + "/pipeline.json" )
 
@@ -126,24 +128,25 @@ def main(path,imgdirectory=None):
         reprojected = {}
         R ={}
         t={}
-        valIds={}
         detectcorns = {}
 
         othercounter=0
 
+        #start self  reprojecting
         for camname in camnames:
 
             img[camname] = np.zeros((480,640,3),dtype=np.uint8)
             reprojected[camname]={}
 
+
             #read image
-            img = cv2.imread(imgdirectory+camname + "_rgb_" + str(count) + ".png")
+            img[camname] = cv2.imread(imgdirectory+camname + "_rgb_" + str(count) + ".png")
 
             #pretty much a copy of cangalhoPnPDetector
 
             
             #finds markers
-            det_corners, ids, rejected = aruco.FindMarkers(img, intrinsics[camname]['rgb']['K'])
+            det_corners, ids, rejected = aruco.FindMarkers(img[camname], intrinsics[camname]['rgb']['K'])
             
             #convert (n_detecions,4,2) into (2,n_detecions*4)
             #pts2D = np.squeeze(det_corners).reshape(len(ids)*4,2).T
@@ -181,8 +184,8 @@ def main(path,imgdirectory=None):
 
                 pts2DISPLAY2D = pts2D.astype(int)
                 for j in range(pts2DISPLAY2D.shape[-1]):   
-                    img[camname] = visu.paintImage(img[camname],[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=colors[othercounter])
 
+                    img[camname] = visu.paintImage(img[camname],[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=colors[othercounter])
 
                 #fetch valid 3D Corners
                 #holds the corner positions in the virgin model 
@@ -198,41 +201,78 @@ def main(path,imgdirectory=None):
                     detectedcornsobtainedmodel[:,j*4:j*4+4] = curcorners.T[:,idd*4:idd*4+4]
 
                 #save in dict 
-                detectcorns[camname] = detectedcornsobtainedmodel
+                if len(validids)>0:
+                    detectcorns[camname] = detectedcornsobtainedmodel
 
                 #get current seen model R and T
                 Rfull,otvec = aruco.GetCangalhoFromMarkersPnP(validids,validcordners,intrinsics[camname]['rgb']['K'],intrinsics[camname]['rgb']['D'],arucoData,arucoModel)
 
-                #convert to rotation vector
-                orvec,_ = cv2.Rodrigues(Rfull)
-
-
-                valIds[camname] = validids
-                R[camname] = orvec
+                
+                
+                R[camname] = Rfull
                 t[camname] = otvec
+
+            
+
+            othercounter=othercounter+1
+
+
+
+        #
+        #print(R,t)
+        print("ROTIFIER")
+
+        brr =[]
+        btt = []
+
+        '''
+        #print cangalho pos in world coordinates
+        for camname in camnames:
+                    
+
+         thiscamId = sceneModel['camnames'].index(camname)
+         rotation = np.dot(sceneModel['R'][thiscamId],R[camname])
+         translation = mmnip.Transform(t[camname],sceneModel['R'][thiscamId],sceneModel['t'][thiscamId])
+         print(rotation)
+         print(translation)
+         brr.append(rotation)
+         btt.append(translation)
+
+        #visu.ViewRefs(brr,btt,refSize=0.1)
+        '''
+
+        #start cross reprojecting
+        for camname in camnames:
 
             minicounter = 0
 
-            for othercam in camnmames:
-
+            print("LOOP",camname)
+            for othercam in camnames:
                 
-                if othercam == camname:
+                #check if it is not self, and if both cameras have some detected corners
+                if othercam == camname or camname not in detectcorns or othercam not in detectcorns:
                     minicounter = minicounter + 1
                     continue
 
                 
-                #transform valids id of this cam seen in the other cam into this cameras coordinates
+         
+                
+                thiscamId = sceneModel['camnames'].index(camname)
+                othercamId = sceneModel['camnames'].index(othercam)
 
 
-                #convert from virgin to other Cam coordinates
+                #convert from virgin corns detected by this to other Cam coordinates
                 newcorns = mmnip.Transform(detectcorns[camname],R[othercam],t[othercam])
+                
+                
 
                 #convert from other Cam to this cam coordinates
-                Rbetweencams = np.dot(sceneModel[camname]['R'].T,sceneModel[othercam]['R'].T)
-                tbetweencams = np.dot(sceneModel[camname]['R'].T, sceneModel[othercam]['t'] - sceneModel[camname]['t'])
+                Rbetweencams = np.dot(sceneModel['R'][thiscamId].T,sceneModel['R'][othercamId])
+                tbetweencams = np.dot(sceneModel['R'][thiscamId].T, sceneModel['t'][othercamId] - sceneModel['t'][thiscamId])
 
 
-                newcorns = mmnip.Transform(detectcorns[camname],Rbetweencams,tbetweencams)
+                newcorns = mmnip.Transform(newcorns,Rbetweencams,tbetweencams)
+
 
                 
                 #we now need to project points from every camera into this camera
@@ -243,30 +283,31 @@ def main(path,imgdirectory=None):
 
                 reprojected[camname][othercam] = pts2Dobtained
 
+
                 #paint the image
                 pts2DISPLAY2D = pts2Dobtained.astype(int)
+
+   
+
                 for j in range(pts2DISPLAY2D.shape[-1]):   
                     img[camname] = visu.paintImage(img[camname],[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=colors[minicounter])
 
-                cv2.imshow('image',img[camname])
-                cv2.waitKey(1000)
 
 
                 minicounter = minicounter + 1
 
-            othercounter=othercounter+1
-
-            cv2.imshow('image',img[camname])
-            cv2.waitKey(1000)
+            #cv2.imshow('image',img[camname])
+            cv2.imwrite(mediapath + "/"+camname+"_"+str(i)+".png",img[camname])
+            
                 
 
         #remove this break after
-        break
+        
 
         #cv2.imshow('image',img)
         #cv2.waitKey(1000)
 
-        #cv2.imwrite("./Media/Imgs" + "/errorz"+str(count) +"_"+ datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")  + ".png",img)
+        
         #cv2.imshow("Detected Markers",img)
         count = count + 1
 
@@ -277,12 +318,13 @@ def main(path,imgdirectory=None):
 
 
 
-            #get pose
+        #get pose
             
         #for the synth, orvec is the estimated rotation, and Rfull is the ground truth rotation
         # for the real, orvec is saved model pnp estimated rotation and Rfull is the observer rotation from the image
         #the error rotation matrix
 
+        '''
         if synth:
             wecome = cv2.Rodrigues(orvec)[0].T
         else:
@@ -346,9 +388,11 @@ def main(path,imgdirectory=None):
             angleerrors.append(-1)
 
             ndetectedarucos.append(0)
+        '''
 
 
-
+    print("Remove later")
+    quit()
         
     #visualize
 
