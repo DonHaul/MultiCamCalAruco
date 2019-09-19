@@ -1,3 +1,7 @@
+'''
+Script used to extract error metrics and images of calibrated scene
+'''
+
 from libs import *
 import numpy as np
 import random
@@ -8,7 +12,17 @@ import csv
 import time
 import open3d
 
+
+
 def InitializeStats(statstext, measurestext):
+    '''Initializes the error data struct with the wanted metrics
+
+    Args:
+        statstext - array with text of statistics (std, mean, median)
+        measurestext - array with what is meausered (angle, translation, rodriguez)
+    Returns;
+        errordata[measuretext][stat]
+    '''
 
     errorData={}
 
@@ -22,6 +36,23 @@ def InitializeStats(statstext, measurestext):
     return errorData
 
 def MultTranslError(trans):
+    '''Measures translation error in a combinatorial way
+        if 4 trnalations are given
+        tests following norms:
+        1-2
+        1-3
+        1-4
+        2-3
+        2-4
+        3-4
+        and then divides by the number of norms
+
+        the result corresponds to the average distance between arucos in different cameras
+
+    Returns:
+        norm
+    '''
+
     brah = 0
     
     cumnorm = 0
@@ -35,6 +66,23 @@ def MultTranslError(trans):
     return cumnorm/brah
 
 def MultRotError(rot):
+    '''Measures rotation error in a combinatorial way
+        if 4 trnalations are given
+        tests following norms:
+        1-2
+        1-3
+        1-4
+        2-3
+        2-4
+        3-4
+        and then divides by the number of norms
+
+        the result corresponds to the average distance between arucos in different cameras
+
+    Returns:
+        averaged normalized rodriguez between rotations   
+        average angle betwwen rotations
+    '''
     brah = 0
     
     curanglz = 0
@@ -72,6 +120,9 @@ def MultRotError(rot):
 
 
 def GenSimpleStats(errorMeasure,measurename,errorData,statstext=None):
+    '''
+    Calculates basic statistics about the measurement
+    '''
     
     if measurename not in errorData and statstext is not None:
         errorData[measurename]= {}
@@ -96,64 +147,53 @@ def GenSimpleStats(errorMeasure,measurename,errorData,statstext=None):
 
 def main(path,imgdirectory=None,saveImgs=True):
     #path = "./Logs/2019-09-01_18:07:51_coyote"
+    
     view=False
-
     synth = False
 
-    print(imgdirectory)
-
+    #fetches info about images
     info =  FileIO.getJsonFromFile(imgdirectory+"info.json")
-
-    print(info)
     frames = info['count']
     camnames = info['camnames']
     
-    print(camnames)
-
+    #fetch intrinsics
     intrinsics = FileIO.getIntrinsics(camnames)
-    #K = intrinsics[camname]['rgb']['K']
-    #D = intrinsics[camname]['rgb']['D']
-        
 
-
-   
-
+    #get media path
     mediapath = FileIO.CreateFolder("../Media2/reprojections",putDate=True)
 
+    #get basic pipeline information
     data =  FileIO.getJsonFromFile( path + "/pipeline.json" )
 
-    print(data)
-
+    #get basic arucoData
     arucoData =  FileIO.getJsonFromFile(data['model']['arucodata'])
 
+    #get scene position
     sceneModel = FileIO.getFromPickle( path + "/poses.pickle" )
     
-
+    #get estimated aruco model
     arucoModel = FileIO.getFromPickle( data['model']['arucomodel'])
 
+    #get all corners
     curcorners = arucoModel['corners']
     
+    #create the idmap
     arucoData['idmap'] = aruco.markerIdMapper(arucoData['ids'])    
  
 
-
+    #measures that will be  used
     measurestext=['corner','center','reprojection','translation','angle','rodriguez']
     statstext=['singular','total','avg','median','std']
-
-    #errorData = FileIO.getJsonFromFile(path + "/errors.pickle")
 
     #if errorData is None:
     errorData = InitializeStats(statstext,measurestext)
 
-
-    posesObtained =  FileIO.getFromPickle(path+"/poses.pickle")
-
-    
+        
     #reprojection error
     allnoisypts2D=[]
 
   
-
+    #initialized error metrics
     reprojectionerrors= np.array([])
     translationerrors = []
     rodriguezerrors = []
@@ -162,26 +202,36 @@ def main(path,imgdirectory=None,saveImgs=True):
 
     nactivecams = []
 
+    #initialize counters
     count = 0
     imcount =0
 
+    #colors correspondent to each camera
     colors=[]
     colors.append([1, 1, 0])
     colors.append([1,0,1])
     colors.append([0,1,1])
+    colors.append([0.5,0.5,0])
+    colors.append([0.5,0,0.5])
 
+
+    #initialized more error metrics
     cangalhotranslerr = []
     cangalhorotriguezerr = []
     cangalhorotangleerr = []
     fullcrossreprojectionerror =[]
     crossreprojectionerr={}
 
-    for cam in camnames:
+    frameservations = {}
 
+    #initialize cross reprojection error
+    for cam in camnames:
         crossreprojectionerr[cam]=[]
 
-    #go throuth every image or generate frames
+    #go throuth every image or generate frames and corners detected on their own images
     for i in range(0,frames):
+
+        print("FRAME",i)
 
         img={}
         reprojected = {}
@@ -194,30 +244,31 @@ def main(path,imgdirectory=None,saveImgs=True):
         #start self  reprojecting
         for camname in camnames:
 
+            #initialize new empty image for a camera
             img[camname] = np.zeros((480,640,3),dtype=np.uint8)
+
+            #initialize where corners will be saved in this frame for each camera
             reprojected[camname]={}
 
 
             #read image
-            img[camname] = cv2.imread(imgdirectory+camname + "_rgb_" + str(count) + ".png")
-
-            #pretty much a copy of cangalhoPnPDetector
-
+            img[camname] = cv2.imread(imgdirectory+camname + "_rgb_" + str(i) + ".png")
             
+            #if(camname == "diavolo"):
+            #    cv2.imshow('image',img[camname])
+            #    cv2.waitKey(0)
+
             #finds markers
             det_corners, ids, rejected = aruco.FindMarkers(img[camname], intrinsics[camname]['rgb']['K'])
             
-            #convert (n_detecions,4,2) into (2,n_detecions*4)
-            #pts2D = np.squeeze(det_corners).reshape(len(ids)*4,2).T
 
+            #FUCTION: fetch valid ids and corners
             validids=[]
             validcordners= []
 
             #in case there is only 1 id, convert it into a list with 1 element
             if ids is not None:
-
                 ids = ids.squeeze()
-
                 if (helperfuncs.is_empty(ids.shape)):
                     ids=[int(ids)]
 
@@ -234,108 +285,139 @@ def main(path,imgdirectory=None,saveImgs=True):
         
                         validids.append(ids[k])
                         validcordners.append(det_corners[k]) 
-            
+
+
                 #fetch valiid 2D points, squeezes and reshaped so that they can be easily read by pts2Ddisplay
                 pts2D = np.squeeze(validcordners).reshape(len(validids)*4,2).T
 
-                #this corresponds to the projected
+                #END_FUCTION
+
+                #this corresponds to the projected self corners
                 reprojected[camname][camname]=pts2D
 
+                #FUNCTION paint image:
                 pts2DISPLAY2D = pts2D.astype(int)
                 for j in range(pts2DISPLAY2D.shape[-1]):   
 
-                    img[camname] = visu.paintImage(img[camname],[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=colors[othercounter])
+                    img[camname] = visu.paintImage(img[camname],[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=colors[othercounter])                    
+                #END_FUCTION
+
+
+
 
                 #fetch valid 3D Corners
                 #holds the corner positions in the virgin model 
                 detectedcornsobtainedmodel = np.zeros((3,len(validids)*4))
 
+                #Fetches all virgin valid corners
                 for j in range(len(validids)):
                     idd = arucoData['idmap'][str(validids[j])]
-                    #print(curcorners.shape)
-                    #print(validids[j]*4,validids[j]*4+4)
-                    #print(curcorners.T[:,validids[j]*4:validids[j]*4+4].shape)
 
                     #this correspond the the obtained model corners, in the virgin model
                     detectedcornsobtainedmodel[:,j*4:j*4+4] = curcorners.T[:,idd*4:idd*4+4]
 
-                #save in dict 
+                #save the 3D corners in the dictionary
                 if len(validids)>0:
                     detectcorns[camname] = detectedcornsobtainedmodel
 
                 #get current seen model R and T
                 Rfull,otvec = aruco.GetCangalhoFromMarkersPnP(validids,validcordners,intrinsics[camname]['rgb']['K'],intrinsics[camname]['rgb']['D'],arucoData,arucoModel)
 
-                
-                
+                print(camname,Rfull)
+                #save it
                 R[camname] = Rfull
-                t[camname] = otvec
-
+                t[camname] = otvec           
+                
             
-
+            #counter used for color switching
             othercounter=othercounter+1
 
 
 
-        #
-        #print(R,t)
-        print("ROTIFIER")
 
+        #FUNCTION 3D Visualization and cangalho errors
+
+        #holders for rotations and translations
         brr =[]
         btt = []
 
         geometries = []
         
         #GET 3D VIZUALIZATION + CANGALHO ERRORS
+
+        #counter for colors
         camcount = 0
+
         for camname in camnames:
-                    
-            
-            if camname not in detectcorns:
-                camcount = camcount + 1
-                continue
 
+            #get camera id
             thiscamId = sceneModel['camnames'].index(camname)
-            rotation = np.dot(sceneModel['R'][thiscamId],R[camname])
-            translation = mmnip.Transform(t[camname],sceneModel['R'][thiscamId],sceneModel['t'][thiscamId])
- 
 
-            brr.append(rotation)
-            btt.append(translation)
-
+            #create camera coordinate frame
             camref = open3d.create_mesh_coordinate_frame(0.2, origin = [0, 0, 0])
             camref.transform(mmnip.Rt2Homo(sceneModel['R'][thiscamId],np.squeeze(sceneModel['t'][thiscamId])))
             geometries.append(camref)
 
+            #create camera model in scene
             camera = visu.DrawCamera(sceneModel['R'][thiscamId],sceneModel['t'][thiscamId],color=colors[camcount],view=False)
+            geometries.append(camera)
+            
+            if camname not in detectcorns:
+                camcount = camcount + 1
+                continue
+            
+
+
+            #get cangalho rotation in this camera's coordinate system
+            rotation = np.dot(sceneModel['R'][thiscamId],R[camname])
+            
+            #get cangalho translation in the worlds' camera coordinate system
+            translation = mmnip.Transform(t[camname],sceneModel['R'][thiscamId],sceneModel['t'][thiscamId])
+ 
+            #save 'em
+            brr.append(rotation)
+            btt.append(translation)
+
+            #FUNCTION - VISUALIZATION
+
+
+            
+            #create sphere at cangalho detected position
             sphere = open3d.create_mesh_sphere(0.016)
             sphere.compute_vertex_normals()
-
             H = mmnip.Rt2Homo(rotation,np.squeeze(translation))
-
-            #prints marker position estimates
-            refe = open3d.create_mesh_coordinate_frame(0.1, origin = [0, 0, 0])
-            refe.transform(H)
             sphere.transform(H)
             sphere.paint_uniform_color(colors[camcount])
 
+            #create coordinate system at cangalho detected position
+            refe = open3d.create_mesh_coordinate_frame(0.1, origin = [0, 0, 0])
+            refe.transform(H)
+
+            #add them to scene
             geometries.append(refe)
             geometries.append(sphere)
-            geometries.append(camera)
+            
 
 
             camcount = camcount+1
 
-        #visu.draw_geometry(geometries,saveImg=True,saveName=mediapath + "/"+"SCENE"+"_"+str(i)+".png")
+        view=True
+        #view 'em
+        if view:
+            visu.draw_geometry(geometries,saveImg=True,saveName=mediapath + "/"+"SCENE"+"_"+str(i)+".png")
         
-
-        #geometries = visu.ViewRefs(brr,btt,refSize=0.1),view = False
         
+        #save translation error for the frame        
         cangalhotranslerr.append(MultTranslError(brr))
+
+        #save roation errors
         rotrig,rotangle = MultRotError(brr)
         cangalhorotriguezerr.append(rotrig)
         cangalhorotangleerr.append(rotangle)
 
+
+
+        #FUNCTION:Cross ReProjection 
 
         normerr = {}
         #number of acitves cams per cam
@@ -348,6 +430,8 @@ def main(path,imgdirectory=None,saveImgs=True):
 
             minicounter = 0
             activecamcounter = 0
+
+            normerr[camname] = []
             
 
             print("LOOP",camname)
@@ -357,10 +441,11 @@ def main(path,imgdirectory=None,saveImgs=True):
                 if othercam == camname or camname not in detectcorns or othercam not in detectcorns:
                     minicounter = minicounter + 1
                     continue
-
+                
+                #add active camera (used to normalize later)
                 activecamcounter = activecamcounter + 1
          
-                
+                #get camera ids
                 thiscamId = sceneModel['camnames'].index(camname)
                 othercamId = sceneModel['camnames'].index(othercam)
 
@@ -373,8 +458,6 @@ def main(path,imgdirectory=None,saveImgs=True):
                 #convert from other Cam to this cam coordinates
                 Rbetweencams = np.dot(sceneModel['R'][thiscamId].T,sceneModel['R'][othercamId])
                 tbetweencams = np.dot(sceneModel['R'][thiscamId].T, sceneModel['t'][othercamId] - sceneModel['t'][thiscamId])
-
-
                 newcorns = mmnip.Transform(newcorns,Rbetweencams,tbetweencams)
 
 
@@ -385,58 +468,71 @@ def main(path,imgdirectory=None,saveImgs=True):
                 pts2Dobtained = cv2.projectPoints(newcorns.T, np.eye(3) , np.zeros((3,1)),intrinsics[camname]['rgb']['K'],np.zeros((5,1),dtype=float))[0].T
                 pts2Dobtained = np.squeeze(pts2Dobtained)
 
+                #and save them
                 reprojected[camname][othercam] = pts2Dobtained
 
 
-                #paint the image
+                #FUNCTION: Paint Image
                 pts2DISPLAY2D = pts2Dobtained.astype(int)
-
    
-
                 for j in range(pts2DISPLAY2D.shape[-1]):   
                     img[camname] = visu.paintImage(img[camname],[pts2DISPLAY2D[1,j],pts2DISPLAY2D[0,j]],offset=1,color=colors[minicounter])
 
 
-
                 minicounter = minicounter + 1
 
+                #add norms measure from this camera to all other cameras
+                normerr[camname] = normerr[camname] + np.linalg.norm(reprojected[camname][camname] - reprojected[camname][othercam],axis=0).tolist()
 
-                normerr[camname] = np.linalg.norm(reprojected[camname][camname] - reprojected[camname][othercam],axis=0)
-                activecamcount[camname] = activecamcounter
-                nactivecorns[camname] = reprojected[camname][camname][1]
-
-
+        
             #sums the errors in single image
             fullreperr = 0
 
 
+        #camcount
+        togethererr = []
+        for cam in camnames:
 
+            #if camera has no detected corners
+            if camname not in normerr:
+                    minicounter = minicounter + 1
+                    continue
 
-            #camcount
-            for cam in camnames:
+            togethererr = togethererr + normerr[camname]
 
-                #if camera has no detected corners
-                if camname not in normerr:
-                        minicounter = minicounter + 1
-                        continue
+            #(activecamcount[camname]*nactivecorns[camname]) is used to normalize the obtained error to the 
 
-                fullreperr = normerr[camname]/(activecamcount[camname]*nactivecorns[camname]) + fullreperr
+        fullcrossreprojectionerror.append(np.sum(togethererr)/len(togethererr))
+        
+        #OBSERVATION GENNER PART
+        frameservations = []
 
-            fullcrossreprojectionerror.append(fullreperr)
-         
+        allcamObs = [ [] for i in range(len(camnames)) ]
+        
+        #iterate throguh cameras
+        for cam  in camnames:
 
-            #cv2.imshow('image',img[camname])
-            #cv2.imwrite(mediapath + "/"+camname+"_"+str(i)+".png",img[camname])
+            camId = sceneModel['camnames'].index(cam)
+
+            obs = {"obsId":0,"R":R[cam],"t":t[cam]}
 
             
 
-        #cv2.imshow("Detected Markers",img)
-        count = count + 1
+
+            #get new observations of that camera
+            allcamObs[camId]=obs  # WRONG SHOULD IT BE concantenate lists OR =?
+
+        print(allcamObs)
+
+        obsR , obsT = obsgen.GenerateCameraPairObs(allcamObs,arucoModel['R'],arucoModel['t'])
+
+        frameservations.append({"obsR":obsR,"obsT":obsT})
+
+        print(frameservations)
+        quit()
 
 
-        print("COUNT:",count)
-        #reprojection error 
-        curreprojectionerror = np.linalg.norm(pts2Dobtained - pts2D,axis=0)
+
 
 
 
