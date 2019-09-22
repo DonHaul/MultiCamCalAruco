@@ -401,7 +401,7 @@ def main(path,imgdirectory=None,saveImgs=True):
 
             camcount = camcount+1
 
-        view=True
+        
         #view 'em
         if view:
             visu.draw_geometry(geometries,saveImg=True,saveName=mediapath + "/"+"SCENE"+"_"+str(i)+".png")
@@ -508,6 +508,7 @@ def main(path,imgdirectory=None,saveImgs=True):
         frameservations = []
 
         allcamObs = [ [] for i in range(len(camnames)) ]
+        print(allcamObs)
         
         #iterate throguh cameras
         for cam  in camnames:
@@ -520,111 +521,26 @@ def main(path,imgdirectory=None,saveImgs=True):
 
 
             #get new observations of that camera
-            allcamObs[camId]=obs  # WRONG SHOULD IT BE concantenate lists OR =?
+            allcamObs[camId]=[obs]  # WRONG SHOULD IT BE concantenate lists OR =?
 
-        print(allcamObs)
+        #print("Confuse")
+        #print(allcamObs[i])
+        #for obsiR in allcamObs[i]:
+        #    print(obsiR)
 
         obsR , obsT = obsgen.GenerateCameraPairObs(allcamObs,arucoModel['R'],arucoModel['t'])
+
+
 
         frameservations.append({"obsR":obsR,"obsT":obsT})
 
         print(frameservations)
-        quit()
-
-
-
-
-
 
         #get pose
             
         #for the synth, orvec is the estimated rotation, and Rfull is the ground truth rotation
-        # for the real, orvec is saved model pnp estimated rotation and Rfull is the observer rotation from the image
+        #for the real, orvec is saved model pnp estimated rotation and Rfull is the observer rotation from the image
         #the error rotation matrix
-
-        '''
-        if synth:
-            wecome = cv2.Rodrigues(orvec)[0].T
-        else:
-            wecome = orvec.T
-
-        
-        errorRot = np.dot(wecome,Rfull)
-
-
-        val = ((np.trace(errorRot) - 1) / 2)
-        if val > 1:
-            val=1
-
-        #angle error
-        curangleerrors = np.rad2deg(np.arccos(val))
-
-        rodriz = cv2.Rodrigues(errorRot)[0]
-        print("Rodriz",rodriz)
-
-        #rodriguez error (norm of rotation vector)
-        currodriguezerror = np.linalg.norm(rodriz)
-
-
-        #translation error
-
-        #tfull in camera coordninate is
-        
-    
-        if synth:
-            #[0],[0],[-camDist]] is the fixed cangalho position
-            curtranslationerrors = np.linalg.norm(np.array([[0],[0],[-camDist]])-otvec)
-        elif len(validids)>0:
-            #otvec is the observed position form the image (uses the realtime model, what it sees), otvec2 uses the saved model 
-            curtranslationerrors = np.linalg.norm(np.array(otvec2-otvec))
-
-        if (not synth and  len(validids)>0) or synth:
-            reprojectionerrors = np.concatenate([reprojectionerrors,curreprojectionerror],axis=0)
-
-            errorData = GenSimpleStats(curreprojectionerror.tolist(),'reprojection_'+str(i) , errorData,statstext)
-
-
-            rodriguezerrors.append(currodriguezerror)
-
-            translationerrors.append(curtranslationerrors)
-
-            angleerrors.append(curangleerrors)
-            print("ANGLE ERR")
-            print(curangleerrors)
-
-            ndetectedarucos.append(len(validids))
-
-        else:
-            #set all to -1
-            errorData = GenSimpleStats([-1],'reprojection_'+str(i) , errorData,statstext)
-
-
-            rodriguezerrors.append(-1)
-
-            translationerrors.append(-1)
-
-            angleerrors.append(-1)
-
-            ndetectedarucos.append(0)
-        '''
-
-
-    print("Remove later")
-    quit()
-        
-    #visualize
-
-    errorData = GenSimpleStats(reprojectionerrors.tolist(),'reprojection',errorData)
-
-    errorData = GenSimpleStats(translationerrors,'translation',errorData)
-
-    errorData = GenSimpleStats(angleerrors,'angle',errorData)
-
-    errorData = GenSimpleStats(rodriguezerrors,'rodriguez',errorData)
-    
-
-    errorData = GenSimpleStats(ndetectedarucos,'ndetectedarucos',errorData,statstext)
-
 
 
     #get the 3D matrix
@@ -649,6 +565,14 @@ if __name__ == "__main__":
 
     frames =  FileIO.getJsonFromFile(imagepath+"/info.json")['count']
 
+    #get scene position
+    sceneModel = FileIO.getFromPickle( path + "/poses.pickle" )
+
+    ndetectmeas = []
+    for cam in sceneModel['camnames']:
+        ndetectmeas.append(cam + "_" + "N_detectedCorns") 
+
+    
 
     #write csv
     with open(path+'/errors.csv', 'wb') as csvfile:
@@ -662,13 +586,20 @@ if __name__ == "__main__":
         
         count = 0
         
-        statstext=['total','avg','median','std']
 
         m = 'reprojection'
-        for stat in statstext:
+        
+        #gen n detected arucos
+        for cam in statstext:
             fullmeasures.append(m+"_"+stat+" [px]")
+
+        cametrics = ["terr","Rerrangle","Rriguez"]
+
+        for l in range(0,len(cam))
+        
+
             
-        filewriter.writerow(['frame','# arucos'] + fullmeasures + ['translation','|rotationvec|','angle'])
+        filewriter.writerow(['frame'] + ndetectmeas + ['tcangalho','Rcangalhoangle','Rcangalhorodrigues'] + fullmeasures + ['translation','|rotationvec|','angle'])
 
         for i in range(frames):
 
