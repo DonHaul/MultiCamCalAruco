@@ -220,13 +220,17 @@ def main(path,imgdirectory=None,saveImgs=True):
     cangalhorotriguezerr = []
     cangalhorotangleerr = []
     fullcrossreprojectionerror =[]
+
     crossreprojectionerr={}
+    reprojectedcornes={}
 
     frameservations = {}
 
     #initialize cross reprojection error
+    #initialize number of corns per cam
     for cam in camnames:
         crossreprojectionerr[cam]=[]
+        reprojectedcornes[cam] = []
 
     #go throuth every image or generate frames and corners detected on their own images
     for i in range(0,frames):
@@ -323,7 +327,7 @@ def main(path,imgdirectory=None,saveImgs=True):
                 #get current seen model R and T
                 Rfull,otvec = aruco.GetCangalhoFromMarkersPnP(validids,validcordners,intrinsics[camname]['rgb']['K'],intrinsics[camname]['rgb']['D'],arucoData,arucoModel)
 
-                print(camname,Rfull)
+                #print(camname,Rfull)
                 #save it
                 R[camname] = Rfull
                 t[camname] = otvec           
@@ -353,14 +357,16 @@ def main(path,imgdirectory=None,saveImgs=True):
             #get camera id
             thiscamId = sceneModel['camnames'].index(camname)
 
-            #create camera coordinate frame
-            camref = open3d.create_mesh_coordinate_frame(0.2, origin = [0, 0, 0])
-            camref.transform(mmnip.Rt2Homo(sceneModel['R'][thiscamId],np.squeeze(sceneModel['t'][thiscamId])))
-            geometries.append(camref)
+            if view:
 
-            #create camera model in scene
-            camera = visu.DrawCamera(sceneModel['R'][thiscamId],sceneModel['t'][thiscamId],color=colors[camcount],view=False)
-            geometries.append(camera)
+                #create camera coordinate frame
+                camref = open3d.create_mesh_coordinate_frame(0.2, origin = [0, 0, 0])
+                camref.transform(mmnip.Rt2Homo(sceneModel['R'][thiscamId],np.squeeze(sceneModel['t'][thiscamId])))
+                geometries.append(camref)
+
+                #create camera model in scene
+                camera = visu.DrawCamera(sceneModel['R'][thiscamId],sceneModel['t'][thiscamId],color=colors[camcount],view=False)
+                geometries.append(camera)
             
             if camname not in detectcorns:
                 camcount = camcount + 1
@@ -380,23 +386,23 @@ def main(path,imgdirectory=None,saveImgs=True):
 
             #FUNCTION - VISUALIZATION
 
-
+            if view:
             
-            #create sphere at cangalho detected position
-            sphere = open3d.create_mesh_sphere(0.016)
-            sphere.compute_vertex_normals()
-            H = mmnip.Rt2Homo(rotation,np.squeeze(translation))
-            sphere.transform(H)
-            sphere.paint_uniform_color(colors[camcount])
+                #create sphere at cangalho detected position
+                sphere = open3d.create_mesh_sphere(0.016)
+                sphere.compute_vertex_normals()
+                H = mmnip.Rt2Homo(rotation,np.squeeze(translation))
+                sphere.transform(H)
+                sphere.paint_uniform_color(colors[camcount])
 
-            #create coordinate system at cangalho detected position
-            refe = open3d.create_mesh_coordinate_frame(0.1, origin = [0, 0, 0])
-            refe.transform(H)
+                #create coordinate system at cangalho detected position
+                refe = open3d.create_mesh_coordinate_frame(0.1, origin = [0, 0, 0])
+                refe.transform(H)
 
-            #add them to scene
-            geometries.append(refe)
-            geometries.append(sphere)
-            
+                #add them to scene
+                geometries.append(refe)
+                geometries.append(sphere)
+                
 
 
             camcount = camcount+1
@@ -434,7 +440,7 @@ def main(path,imgdirectory=None,saveImgs=True):
             normerr[camname] = []
             
 
-            print("LOOP",camname)
+            #print("LOOP",camname)
             for othercam in camnames:
                 
                 #check if it is not self, and if both cameras have some detected corners
@@ -483,8 +489,16 @@ def main(path,imgdirectory=None,saveImgs=True):
 
                 #add norms measure from this camera to all other cameras
                 normerr[camname] = normerr[camname] + np.linalg.norm(reprojected[camname][camname] - reprojected[camname][othercam],axis=0).tolist()
+                
+            print(len(normerr[camname]))
 
-        
+
+            #number of corners detected per camera
+            if camname in detectcorns:
+                reprojectedcornes[camname].append(reprojected[camname][camname].shape[1])
+            else:
+                reprojectedcornes[camname].append(0)
+
             #sums the errors in single image
             fullreperr = 0
 
@@ -508,25 +522,24 @@ def main(path,imgdirectory=None,saveImgs=True):
         frameservations = []
 
         allcamObs = [ [] for i in range(len(camnames)) ]
-        print(allcamObs)
+        #print(allcamObs)
         
         #iterate throguh cameras
         for cam  in camnames:
 
             camId = sceneModel['camnames'].index(cam)
 
-            obs = {"obsId":0,"R":R[cam],"t":t[cam]}
+            if cam in R:
+                obs = {"obsId":0,"R":R[cam],"t":t[cam]}
+                #print("Yare Yare daze",cam)
+                #print(obs)
+                #get new observations of that camera
 
-            
+                #only if contains valid observation
+                if obs['R'] is not None:
+                    allcamObs[camId]=[obs]  # WRONG SHOULD IT BE concantenate lists OR =?
 
 
-            #get new observations of that camera
-            allcamObs[camId]=[obs]  # WRONG SHOULD IT BE concantenate lists OR =?
-
-        #print("Confuse")
-        #print(allcamObs[i])
-        #for obsiR in allcamObs[i]:
-        #    print(obsiR)
 
         obsR , obsT = obsgen.GenerateCameraPairObs(allcamObs,arucoModel['R'],arucoModel['t'])
 
@@ -534,7 +547,7 @@ def main(path,imgdirectory=None,saveImgs=True):
 
         frameservations.append({"obsR":obsR,"obsT":obsT})
 
-        print(frameservations)
+        #print(frameservations)
 
         #get pose
             
@@ -542,10 +555,13 @@ def main(path,imgdirectory=None,saveImgs=True):
         #for the real, orvec is saved model pnp estimated rotation and Rfull is the observer rotation from the image
         #the error rotation matrix
 
+    #add everythin to return data structunre
+    errorData["reprojectedcornes"] = reprojectedcornes
+    errorData["cangalhotranslerr"] = cangalhotranslerr
+    errorData["cangalhorotriguezerr"] = cangalhorotriguezerr
+    errorData["cangalhorotangleerr"] = cangalhorotangleerr   
+    errorData["reprojectionNormAvg"] = fullcrossreprojectionerror
 
-    #get the 3D matrix
-    #rvec,_ = cv2.Rodrigues(orvec)
-    #print(errorData)
 
     return errorData
 
@@ -565,12 +581,38 @@ if __name__ == "__main__":
 
     frames =  FileIO.getJsonFromFile(imagepath+"/info.json")['count']
 
+    #get camnames
+    camnames =  FileIO.getJsonFromFile(imagepath+"info.json")['camnames']
+
+
+    
+
+    moremetrics = []
+
+
+
     #get scene position
     sceneModel = FileIO.getFromPickle( path + "/poses.pickle" )
 
+
+
     ndetectmeas = []
+    
     for cam in sceneModel['camnames']:
-        ndetectmeas.append(cam + "_" + "N_detectedCorns") 
+        ndetectmeas.append(cam + "_" + "N_detectedCorns")
+        
+        reprojectedcornes[camname]
+
+
+
+    cametrics = ["terr","Rerrangle","Rriguez"]
+
+    for met in cametrics:
+        for l in range(0,len(camnames)):
+            for m in range(l+1,len(camnames)):
+                moremetrics.append(met + "_" + camnames[sceneModel['camnames'].index(camnames[l])]+"_"+ camnames[sceneModel['camnames'].index(camnames[m])])
+                    
+    
 
     
 
@@ -590,27 +632,32 @@ if __name__ == "__main__":
         m = 'reprojection'
         
         #gen n detected arucos
-        for cam in statstext:
+        statstext=['total','avg','median','std']
+        for stat in statstext:
             fullmeasures.append(m+"_"+stat+" [px]")
-
-        cametrics = ["terr","Rerrangle","Rriguez"]
-
-        for l in range(0,len(cam))
-        
-
+       
             
-        filewriter.writerow(['frame'] + ndetectmeas + ['tcangalho','Rcangalhoangle','Rcangalhorodrigues'] + fullmeasures + ['translation','|rotationvec|','angle'])
+        filewriter.writerow(['frame'] + ndetectmeas + ['tcangalho','Rcangalhoangle','|Rcangalhorodrigues|' + "reprojectionNormAvg"] + moremetrics)
 
         for i in range(frames):
 
-            
-            repMeasures=[]
-            for stat in statstext:
-                repMeasures.append(errorData['reprojection_'+str(i)][stat])
+            #load cornes for this one
+            ndetectedN = []
+            for cam in sceneModel['camnames']:
+                ndetectedN.append(errorData["reprojectedcornes"][cam][i])
+
+                   
+            filewriter.writerow([i] +  ndetectedN  + 
+            [ errorData["cangalhotranslerr"][i], errorData["cangalhorotangleerr"][i],errorData["cangalhorotriguezerr"][i]] + 
+            [errorData["reprojectionNormAvg"][i]] + 
 
 
-            
-            filewriter.writerow([i,errorData['ndetectedarucos']['singular'][i]] + repMeasures + [errorData['translation']['singular'][i],errorData['rodriguez']['singular'][i],errorData['angle']['singular'][i] ])
+
+
+
+
+
+            [errorData['translation']['singular'][i],errorData['rodriguez']['singular'][i],errorData['angle']['singular'][i] ])
 
 
         #filewriter.writerow([] + repMeasures + [errorData['translation']['singular'][i],errorData['rodriguez']['singular'][i],errorData['angle']['singular'][i] ])
