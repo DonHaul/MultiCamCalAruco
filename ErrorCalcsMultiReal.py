@@ -224,7 +224,11 @@ def main(path,imgdirectory=None,saveImgs=True):
     crossreprojectionerr={}
     reprojectedcornes={}
 
-    frameservations = {}
+
+
+    #OBSERVATION GENNER PART
+    frameservations = []
+
 
     #initialize cross reprojection error
     #initialize number of corns per cam
@@ -518,10 +522,9 @@ def main(path,imgdirectory=None,saveImgs=True):
 
         fullcrossreprojectionerror.append(np.sum(togethererr)/len(togethererr))
         
-        #OBSERVATION GENNER PART
-        frameservations = []
 
-        allcamObs = [ [] for i in range(len(camnames)) ]
+
+        allcamObs = [ [] for q in range(len(camnames)) ]
         #print(allcamObs)
         
         #iterate throguh cameras
@@ -545,7 +548,7 @@ def main(path,imgdirectory=None,saveImgs=True):
 
 
 
-        frameservations.append({"obsR":obsR,"obsT":obsT})
+        frameservations.append({"frame":i,"obsR":obsR,"obsT":obsT})
 
         #print(frameservations)
 
@@ -561,7 +564,7 @@ def main(path,imgdirectory=None,saveImgs=True):
     errorData["cangalhorotriguezerr"] = cangalhorotriguezerr
     errorData["cangalhorotangleerr"] = cangalhorotangleerr   
     errorData["reprojectionNormAvg"] = fullcrossreprojectionerror
-
+    errorData["frameservations"] = frameservations
 
     return errorData
 
@@ -600,8 +603,7 @@ if __name__ == "__main__":
     
     for cam in sceneModel['camnames']:
         ndetectmeas.append(cam + "_" + "N_detectedCorns")
-        
-        reprojectedcornes[camname]
+
 
 
 
@@ -637,7 +639,7 @@ if __name__ == "__main__":
             fullmeasures.append(m+"_"+stat+" [px]")
        
             
-        filewriter.writerow(['frame'] + ndetectmeas + ['tcangalho','Rcangalhoangle','|Rcangalhorodrigues|' + "reprojectionNormAvg"] + moremetrics)
+        filewriter.writerow(['frame'] + ndetectmeas + ['tcangalho','Rcangalhoangle','|Rcangalhorodrigues|' , "reprojectionNormAvg"] + moremetrics)
 
         for i in range(frames):
 
@@ -646,18 +648,76 @@ if __name__ == "__main__":
             for cam in sceneModel['camnames']:
                 ndetectedN.append(errorData["reprojectedcornes"][cam][i])
 
+
+            #initialize error matrices
+            combosRotErrRiguez = np.zeros((len(camnames),len(camnames)))
+            combosRotErrAngle = np.zeros((len(camnames),len(camnames)))
+            combosTranslErr = np.zeros((len(camnames),len(camnames)))
+
+
+            #process observations
+            #this are already in scenemodel id format
+            for  obsR,obsT in zip(errorData["frameservations"][i]['obsR'],errorData["frameservations"][i]['obsT']):
+                #get camera ids
+                Rbetweencams = np.dot(sceneModel['R'][obsR['to']].T,sceneModel['R'][obsR['from']])
+
+                errorRot = np.dot(Rbetweencams.T,obsR['R'])
+
+                val = ((np.trace(errorRot) - 1) / 2)
+            
+            
+                if val > 1:
+                    val=1
+
+                curanglz = np.rad2deg(np.arccos(val))
+
+                rodrize = cv2.Rodrigues(errorRot)[0]
+                riguezerror = np.linalg.norm(rodrize)
+
+                combosRotErrRiguez[obsR['to'],obsR['from']] = riguezerror
+                combosRotErrRiguez[obsR['from'],obsR['to']] = riguezerror
+
+                combosRotErrAngle[obsR['to'],obsR['from']] = curanglz
+                combosRotErrAngle[obsR['from'],obsR['to']] = curanglz
+
+                #translationthingz
+                if (obsR['to'] != obsT['to']) or  (obsR['from'] != obsT['from']):
+                    print("OBSERVATIONS DO NOT MATCH")
+                    print("EXITING EARLY")
+                    quit()
+
+                        
+
+                tbetweencams = np.dot(sceneModel['R'][obsR['to']].T, sceneModel['t'][obsR['from']] - sceneModel['t'][obsR['to']])
+                translerr = np.linalg.norm(tbetweencams - obsT['t'])                
+
+                combosTranslErr[obsR['from'],obsR['to']] = translerr
+                combosTranslErr[obsR['to'],obsR['from']] = translerr
+
+            #   cametrics = ["terr","Rerrangle","Rriguez"]
+            #assing the roations
+            terr = []
+            RerrAng = []
+            RerrRod = []
+            for l in range(0,len(camnames)):
+                for m in range(l+1,len(camnames)):
+                    print(sceneModel['camnames'].index(camnames[l]))
+                    print(camnames[sceneModel['camnames'].index(camnames[l])])
+
+                    terr.append(combosTranslErr[sceneModel['camnames'].index(camnames[l]),sceneModel['camnames'].index(camnames[m])])
+                    RerrAng.append(combosRotErrAngle[sceneModel['camnames'].index(camnames[l]),sceneModel['camnames'].index(camnames[m])])
+                    RerrRod.append(combosRotErrRiguez[sceneModel['camnames'].index(camnames[l]),sceneModel['camnames'].index(camnames[m])])
+                    
+       
+
+                    
+       
+
                    
             filewriter.writerow([i] +  ndetectedN  + 
             [ errorData["cangalhotranslerr"][i], errorData["cangalhorotangleerr"][i],errorData["cangalhorotriguezerr"][i]] + 
             [errorData["reprojectionNormAvg"][i]] + 
-
-
-
-
-
-
-
-            [errorData['translation']['singular'][i],errorData['rodriguez']['singular'][i],errorData['angle']['singular'][i] ])
+            terr + RerrAng + RerrRod)
 
 
         #filewriter.writerow([] + repMeasures + [errorData['translation']['singular'][i],errorData['rodriguez']['singular'][i],errorData['angle']['singular'][i] ])
