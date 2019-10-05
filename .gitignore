@@ -1,6 +1,6 @@
 ./Media
 *.png
-./Errors
+Errors/
 
 
 # Byte-compiled / optimized / DLL files
