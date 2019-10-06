@@ -35,7 +35,7 @@ def InitializeStats(statstext, measurestext):
 
     return errorData
 
-def MultTranslError(trans):
+def MultTranslError(trans,prints=False):
     '''Measures translation error in a combinatorial way
         if 4 trnalations are given
         tests following norms:
@@ -53,6 +53,10 @@ def MultTranslError(trans):
         norm
     '''
 
+    if prints:
+        print("== ALL TRANS ==")
+        print(trans)
+        print("=== NORMS ===")
     brah = 0
     
     cumnorm = 0
@@ -63,9 +67,16 @@ def MultTranslError(trans):
 
             cumnorm = cumnorm + np.linalg.norm(trans[n]-trans[m])
 
+            if prints:
+                print(np.linalg.norm(trans[n]-trans[m]))
+
+    if prints:
+        print("RESULT",brah)
+        print(cumnorm/brah)
+
     return cumnorm/brah
 
-def MultRotError(rot):
+def MultRotError(rot,prints=False):
     '''Measures rotation error in a combinatorial way
         if 4 trnalations are given
         tests following norms:
@@ -89,6 +100,11 @@ def MultRotError(rot):
 
     riguezerror=0
 
+    if prints:
+        print("== ALL ROTS ==")
+    
+        print(rot)
+        print("=== ANGLES ===")
 
 
     for m in range(len(rot)):
@@ -100,8 +116,12 @@ def MultRotError(rot):
             val = ((np.trace(errorRot) - 1) / 2)
             
             
+            
             if val > 1:
                 val=1
+
+            if prints:
+                print(np.rad2deg(np.arccos(val)))
 
             #angle error
             curanglz = curanglz + np.rad2deg(np.arccos(val))
@@ -111,6 +131,11 @@ def MultRotError(rot):
 
             #rodriguez error (norm of rotation vector)
             riguezerror = riguezerror + np.linalg.norm(rodrize)
+
+    if prints:
+        print("== FULL ERR ==")
+        print(curanglz/brah)
+        visu.ViewRefs(R=rot)
 
     return riguezerror/brah , curanglz/brah
 
@@ -371,6 +396,7 @@ def main(path,imgdirectory=None,saveImgs=True):
                 #create camera model in scene
                 camera = visu.DrawCamera(sceneModel['R'][thiscamId],sceneModel['t'][thiscamId],color=colors[camcount],view=False)
                 geometries.append(camera)
+                
             
             if camname not in detectcorns:
                 camcount = camcount + 1
@@ -403,11 +429,12 @@ def main(path,imgdirectory=None,saveImgs=True):
                 refe = open3d.create_mesh_coordinate_frame(0.1, origin = [0, 0, 0])
                 refe.transform(H)
 
+                
+
                 #add them to scene
                 geometries.append(refe)
                 geometries.append(sphere)
-                
-
+                #open3d.draw_geometries(geometries)
 
             camcount = camcount+1
 
@@ -418,7 +445,7 @@ def main(path,imgdirectory=None,saveImgs=True):
         
         
         #save translation error for the frame        
-        cangalhotranslerr.append(MultTranslError(brr))
+        cangalhotranslerr.append(MultTranslError(btt))
 
         #save roation errors
         rotrig,rotangle = MultRotError(brr)
@@ -435,6 +462,11 @@ def main(path,imgdirectory=None,saveImgs=True):
         #number of corners
         nactivecorns = {}
 
+        printRep=False
+
+        if printRep:
+            print("========================= REPROS ==")
+
         #start cross reprojecting
         for camname in camnames:
 
@@ -443,10 +475,14 @@ def main(path,imgdirectory=None,saveImgs=True):
 
             normerr[camname] = []
             
+            if printRep:
+                print(camname)
 
             #print("LOOP",camname)
             for othercam in camnames:
                 
+
+
                 #check if it is not self, and if both cameras have some detected corners
                 if othercam == camname or camname not in detectcorns or othercam not in detectcorns:
                     minicounter = minicounter + 1
@@ -491,10 +527,21 @@ def main(path,imgdirectory=None,saveImgs=True):
 
                 minicounter = minicounter + 1
 
+                if printRep:
+                    print("OTHERCAM",othercam)
+                    print("== NORMS ==")
+                    print(np.linalg.norm(reprojected[camname][camname] - reprojected[camname][othercam],axis=0))
+                    print("== AVG NORM ==")
+                    print(np.mean(np.linalg.norm(reprojected[camname][camname] - reprojected[camname][othercam],axis=0)))
+
+
                 #add norms measure from this camera to all other cameras
                 normerr[camname] = normerr[camname] + np.linalg.norm(reprojected[camname][camname] - reprojected[camname][othercam],axis=0).tolist()
-                
-            print(len(normerr[camname]))
+
+            if printRep:               
+                print("ALL CONTRIBS FOR", camname)
+                print(np.mean(normerr[camname]))
+
 
 
             #number of corners detected per camera
@@ -661,7 +708,7 @@ if __name__ == "__main__":
                 #get camera ids
                 Rbetweencams = np.dot(sceneModel['R'][obsR['to']].T,sceneModel['R'][obsR['from']])
 
-                errorRot = np.dot(Rbetweencams.T,obsR['R'])
+                errorRot = np.dot(Rbetweencams.T,obsR['R'].T)
 
                 val = ((np.trace(errorRot) - 1) / 2)
             
