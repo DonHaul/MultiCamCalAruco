@@ -36,7 +36,7 @@ class CamerasObservationMaker(ObservationsMaker.ObservationsMaker):
 
 
     def GetObservations(self,streamData):
-        
+         
         
         #iterate throguh cameras
         for camId in range(0,self.N_objects):

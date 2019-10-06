@@ -635,7 +635,7 @@ if __name__ == "__main__":
     camnames =  FileIO.getJsonFromFile(imagepath+"info.json")['camnames']
 
 
-    
+
 
     moremetrics = []
 
@@ -643,7 +643,6 @@ if __name__ == "__main__":
 
     #get scene position
     sceneModel = FileIO.getFromPickle( path + "/poses.pickle" )
-
 
 
     ndetectmeas = []
@@ -705,10 +704,13 @@ if __name__ == "__main__":
             #process observations
             #this are already in scenemodel id format
             for  obsR,obsT in zip(errorData["frameservations"][i]['obsR'],errorData["frameservations"][i]['obsT']):
+                
+                #print("===== CUR ANGLE ======",obsR['to'],obsR['from'])
+                
                 #get camera ids
                 Rbetweencams = np.dot(sceneModel['R'][obsR['to']].T,sceneModel['R'][obsR['from']])
 
-                errorRot = np.dot(Rbetweencams.T,obsR['R'].T)
+                errorRot = np.dot(Rbetweencams.T,obsR['R'])
 
                 val = ((np.trace(errorRot) - 1) / 2)
             
@@ -717,6 +719,8 @@ if __name__ == "__main__":
                     val=1
 
                 curanglz = np.rad2deg(np.arccos(val))
+                
+                #print(curanglz)
 
                 rodrize = cv2.Rodrigues(errorRot)[0]
                 riguezerror = np.linalg.norm(rodrize)
@@ -734,9 +738,17 @@ if __name__ == "__main__":
                     quit()
 
                         
-
+                
                 tbetweencams = np.dot(sceneModel['R'][obsR['to']].T, sceneModel['t'][obsR['from']] - sceneModel['t'][obsR['to']])
-                translerr = np.linalg.norm(tbetweencams - obsT['t'])                
+                translerr = np.linalg.norm(np.squeeze(tbetweencams) - obsT['t'])                
+
+                #print("T tests")
+                #print(np.squeeze(tbetweencams))
+                #print(obsT['t'])
+                #print(np.squeeze(tbetweencams) - obsT['t'])
+                #print("Result")
+                #print(translerr)
+
 
                 combosTranslErr[obsR['from'],obsR['to']] = translerr
                 combosTranslErr[obsR['to'],obsR['from']] = translerr
@@ -748,8 +760,8 @@ if __name__ == "__main__":
             RerrRod = []
             for l in range(0,len(camnames)):
                 for m in range(l+1,len(camnames)):
-                    print(sceneModel['camnames'].index(camnames[l]))
-                    print(camnames[sceneModel['camnames'].index(camnames[l])])
+                    #print(sceneModel['camnames'].index(camnames[l]))
+                    #print(camnames[sceneModel['camnames'].index(camnames[l])])
 
                     terr.append(combosTranslErr[sceneModel['camnames'].index(camnames[l]),sceneModel['camnames'].index(camnames[m])])
                     RerrAng.append(combosRotErrAngle[sceneModel['camnames'].index(camnames[l]),sceneModel['camnames'].index(camnames[m])])
