@@ -32,7 +32,7 @@ def CreateFolder(directory,putDate=True,suffix=''):
 
     path=directory
     if(putDate==True):
-        path=path +  datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")+'_'+suffix
+        path=path +  datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S")+'_'+suffix
 
     if not os.path.exists(path):
         os.makedirs(path)
@@ -177,7 +177,7 @@ def putFileWithJson(data,filename=None,folder=None,animal=False,putDate=False):
         saveName = saveName + "_" + GetAnimalName()
 
     if putDate:
-        saveName = saveName + "_" +  datetime.datetime.now().strftime("%d-%m-%Y_%H:%M:%S")
+        saveName = saveName + "_" +  datetime.datetime.now().strftime("%d-%m-%Y_%H_%M_%S")
 
 
     f = open(saveName+".json","w")
@@ -247,7 +247,7 @@ def saveAsPickle(name,data,path="pickles/",putDate=True,animal=True):
 
     #add date
     if putDate:
-        saveName = saveName+"_" + datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        saveName = saveName+"_" + datetime.datetime.now().strftime("%Y-%m-%d_%H_%M_%S")
 
     if animal :
         saveName = saveName+"_"+GetAnimalName()

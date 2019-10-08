@@ -70,6 +70,9 @@ def MultTranslError(trans,prints=False):
             if prints:
                 print(np.linalg.norm(trans[n]-trans[m]))
 
+    if brah==0:
+        return -1
+
     if prints:
         print("RESULT",brah)
         print(cumnorm/brah)
@@ -132,10 +135,17 @@ def MultRotError(rot,prints=False):
             #rodriguez error (norm of rotation vector)
             riguezerror = riguezerror + np.linalg.norm(rodrize)
 
+    #no observations
+    if brah==0:
+        return -1,-1
+
     if prints:
         print("== FULL ERR ==")
         print(curanglz/brah)
         visu.ViewRefs(R=rot)
+
+
+
 
     return riguezerror/brah , curanglz/brah
 
@@ -173,11 +183,13 @@ def GenSimpleStats(errorMeasure,measurename,errorData,statstext=None):
 def main(path,imgdirectory=None,saveImgs=True):
     #path = "./Logs/2019-09-01_18:07:51_coyote"
     
-    view=False
+    view=True
     synth = False
 
+    print(imgdirectory)
+
     #fetches info about images
-    info =  FileIO.getJsonFromFile(imgdirectory+"info.json")
+    info =  FileIO.getJsonFromFile(imgdirectory+"/info.json")
     frames = info['count']
     camnames = info['camnames']
     
@@ -567,8 +579,17 @@ def main(path,imgdirectory=None,saveImgs=True):
 
             #(activecamcount[camname]*nactivecorns[camname]) is used to normalize the obtained error to the 
 
-        fullcrossreprojectionerror.append(np.sum(togethererr)/len(togethererr))
-        
+        print(togethererr)
+        print(np.sum(togethererr))
+        print(len(togethererr))
+
+        if len(togethererr)>0:
+            fullcrossreprojectionerror.append(np.sum(togethererr)/len(togethererr))
+        else:
+            fullcrossreprojectionerror.append(-1)
+
+        if i == 436:
+            quit()
 
 
         allcamObs = [ [] for q in range(len(camnames)) ]
