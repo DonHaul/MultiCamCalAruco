@@ -1,17 +1,18 @@
 import libs.FileIO as FileIO
 import libs.visu as visu
-
+import sys
 import open3d as o3d
 
-#location="/home/ramiro/Downloads/"
+location=sys.argv[1]
 
-#ola = FileIO.getFromPickle(location + "poses.pickle")
+ola = FileIO.getFromPickle(location + "poses.pickle")
 
-#print(ola)
+print(ola)
 
 
-#FileIO.SaveAsMat(ola,location + "poses.mat")
+FileIO.SaveAsMat(ola,location + "poses.mat")
 
+quit()
 
 #string ="/./Logs/2019-09-07_23:26:54_mongoose.json"
 
@@ -19,7 +20,7 @@ import open3d as o3d
 
 #print(ola[len(ola)-1])
 
-aruco   = FileIO.getFromPickle("./static/aruco17Set.pickle")
+aruco   = FileIO.getFromPickle(sys.argv[1])
 
 corners = aruco['corners']
 R = aruco['R']

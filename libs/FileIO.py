@@ -225,9 +225,9 @@ def getFromPickle(filename):
 
 
 def SaveImageAllFormats(figure,name,directory):
-    saveAsPickle(name+".fig",figure,path=directory,animal=False,putDate=False)
+    saveAsPickle(name+"-fig",figure,path=directory,animal=False,putDate=False)
     figure.savefig(directory+name+".png", facecolor='w', edgecolor='w',orientation='portrait',transparent=True, bbox_inches=None)
-    figure.savefig(directory+name+".svg", facecolor='w', edgecolor='w',orientation='portrait',transparent=True, bbox_inches=None)
+    #figure.savefig(directory+name+".svg", facecolor='w', edgecolor='w',orientation='portrait',transparent=True, bbox_inches=None)
 
 
 

@@ -1,6 +1,6 @@
 
 import cv2
-import rosinterface as IRos
+import libs.rosinterface as IRos
 
 import rospy
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     rospy.init_node('do_u_kno_di_wae', anonymous=True)
 
 
-    rospy.Subscriber(camName+"/rgb/image_color", Image, arucothing.callback)
+    rospy.Subscriber(camName+"/rgb/image_rect_color", Image, arucothing.callback)
 
     print("Fetching Messages")    
     try:

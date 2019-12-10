@@ -18,7 +18,7 @@ import StreamReader
 class RosStreamReader(StreamReader.StreamReader):
 
     
-    def __init__(self,camNames=None,inputData=None,freq=0.001):
+    def __init__(self,camNames=None,inputData=None,freq=0.01):
 
         StreamReader.StreamReader.__init__(self)
 

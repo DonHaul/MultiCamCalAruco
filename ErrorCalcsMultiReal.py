@@ -183,7 +183,7 @@ def GenSimpleStats(errorMeasure,measurename,errorData,statstext=None):
 def main(path,imgdirectory=None,saveImgs=True):
     #path = "./Logs/2019-09-01_18:07:51_coyote"
     
-    view=True
+    view=False
     synth = False
 
     print(imgdirectory)
@@ -579,18 +579,14 @@ def main(path,imgdirectory=None,saveImgs=True):
 
             #(activecamcount[camname]*nactivecorns[camname]) is used to normalize the obtained error to the 
 
-        print(togethererr)
-        print(np.sum(togethererr))
-        print(len(togethererr))
+        #print(togethererr)
+        #print(np.sum(togethererr))
+        #print(len(togethererr))
 
         if len(togethererr)>0:
             fullcrossreprojectionerror.append(np.sum(togethererr)/len(togethererr))
         else:
             fullcrossreprojectionerror.append(-1)
-
-        if i == 436:
-            quit()
-
 
         allcamObs = [ [] for q in range(len(camnames)) ]
         #print(allcamObs)
@@ -684,7 +680,7 @@ if __name__ == "__main__":
     
 
     
-
+    print(path+'/errors.csv')
     #write csv
     with open(path+'/errors.csv', 'wb') as csvfile:
         filewriter = csv.writer(csvfile, delimiter=',',quotechar='|', quoting=csv.QUOTE_MINIMAL)

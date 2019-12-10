@@ -344,7 +344,10 @@ def GenerateCameraPairObs(camsObs,R,t):
 
                     print(i,j)
 
-                    obsT.append({"from":i,"to":j,"t": np.squeeze(tij)})
+                    if np.linalg.norm(tij<3):
+                        obsT.append({"from":i,"to":j,"t": np.squeeze(tij)})
+                        obsR.append({"from":i,"to":j,"R": (np.linalg.multi_dot([obsiR['R'],R[obsiR['obsId']].T,R[obsjR['obsId']],obsjR['R'].T])).T})
+
 
     return obsR,obsT
 

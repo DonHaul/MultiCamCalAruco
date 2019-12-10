@@ -186,6 +186,7 @@ def ViewRefs(R=None,t=None,refSize=10,showRef=False,view=True,zaWordu=False,save
 
         refs.append(refe)   #Add it to the Referentials array
 
+
     if(showRef==True):
         mesh_sphere=open3d.create_mesh_sphere(radius = refSize*0.3)
 
