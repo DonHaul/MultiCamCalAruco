@@ -1,0 +1,18 @@
+{
+    "diavolo":{
+    "rgbtopic":"/rgb/image_rect_color",
+    "depthtopic":"/depth_registered/sw_registered/image_rect_raw"
+  },
+  "killerqueen":{
+    "rgbtopic":"/rgb/image_rect_color",
+    "depthtopic":"/depth_registered/sw_registered/image_rect_raw"
+  },
+  "speedwagon":{
+    "rgbtopic":"/rgb/image_rect_color",
+    "depthtopic":"/depth_registered/sw_registered/image_rect_raw"
+  },
+  "emperorcrimson":{
+    "rgbtopic":"/rgb/image_rect_color",
+    "depthtopic":"/depth_registered/sw_registered/image_rect_raw"
+  }
+  }
