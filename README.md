@@ -1,4 +1,4 @@
-## Multi Camera Calibration via Aruco
+## Multi Camera Calibration via Arucos
 
 **Keywords:** Camera networks, 3D reconstruction, RGB-D data, Multi Cloud Registration
 
@@ -29,18 +29,3 @@ On top of these, the present other functionalities:
 Run `boxcaster.py` and in another terminal `rospccropper.py CAMERA_NAME`, to crop a given pointcloud to only contain points within a box.
 
 Run `IntrinsicFetcher.py` to obtain the intrinsic parameters of all the existing cameras
-
-
-### Thesis Documents
-~~Master Thesis - [Not yet available](after6monthsputlinkhere)~~
-
-~~Extended Abstract - [Not yet available](after6monthsputlinkhere)~~
-
-Presentation - [Link](https://mega.nz/#F!8MBxFSAB!aoKIWGMDL75TqNgwubL_qA)
-
-<br>
-<br>
-
-**Author:** João Ramiro
-
-**Supervisors:** Manuel Marques, João Paulo Costeira
