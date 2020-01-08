@@ -14,7 +14,7 @@ In this repository there are two main functionalities:
  4. The poses generated will be save in a file.
  
  ### 2. Obtain the Poses between camerast:
- 1. Run `python PosePipelineMaker.py Pipelines/realsense_regular.json` in the passed file, there is information relative to the topics to capture the capturing mode, the calibration object model and its ids.
+ 1. Run `python PosePipelineMaker.py Pipelines/realsense_regular3` in the passed file, there is information relative to the topics to capture the capturing mode, the calibration object model and its ids.
  2. Type an uppercase `R` to first calculate the rotations
  3. Type an uppercase `T` to calculate the translations
  4. The poses generated will be save in a file.
