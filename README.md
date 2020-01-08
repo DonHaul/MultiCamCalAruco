@@ -8,13 +8,13 @@ This repository was built during my Msc Thesis, and it contains part of the code
 In this repository there are two main functionalities:
 
 ### 1. Obtain the Aruco Calibration Object:
- 1. Run `PosePipelineMaker.py cangalho_realsense.json` in the passed file, there is information relative to the topic to capture the capturing mode and the ids of the present arucos.
+ 1. Run `python PosePipelineMaker.py Pipelines/cangalho_realsense.json` in the passed file, there is information relative to the topic to capture the capturing mode and the ids of the present arucos.
  2. Type an uppercase `R` to first calculate the rotations
  3. Type an uppercase `T` to calculate the translations
  4. The poses generated will be save in a file.
  
  ### 2. Obtain the Poses between camerast:
- 1. Run `PosePipelineMaker.py realsense_regular2.json` in the passed file, there is information relative to the topics to capture the capturing mode, the calibration object model and its ids.
+ 1. Run `python PosePipelineMaker.py Pipelines/realsense_regular.json` in the passed file, there is information relative to the topics to capture the capturing mode, the calibration object model and its ids.
  2. Type an uppercase `R` to first calculate the rotations
  3. Type an uppercase `T` to calculate the translations
  4. The poses generated will be save in a file.
